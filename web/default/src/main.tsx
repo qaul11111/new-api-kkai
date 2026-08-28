@@ -31,6 +31,7 @@ import { toast } from 'sonner'
 import { getStatus } from '@/lib/api'
 import { installAuthQueryCacheBoundary } from '@/lib/auth-query-cache'
 import { installBuildMetadata } from '@/lib/build-metadata'
+import { BROWSER_BRAND_NAME, BROWSER_FAVICON } from '@/lib/constants'
 import '@/lib/dayjs'
 import { applyFaviconToDom } from '@/lib/dom-utils'
 import { initializeFrontendCache } from '@/lib/frontend-cache'
@@ -123,40 +124,25 @@ const rootElement = document.querySelector<HTMLElement>('#root')
 if (!rootElement) {
   throw new Error('Application root element is unavailable')
 }
-// Set document.title and favicon from cached status, then refresh from network
+// Keep the browser tab on the LinkAI brand while caching server status for
+// feature modules that consume it.
 ;(function initSystemBranding() {
   try {
     if (typeof window === 'undefined' || typeof document === 'undefined') return
-    const apply = (name: string) => {
-      document.title = name
-      const metaTitle = document.querySelector(
-        'meta[name="title"]'
-      ) as HTMLMetaElement | null
-      if (metaTitle) metaTitle.setAttribute('content', name)
-    }
-    // Cache-first
-    try {
-      const saved = localStorage.getItem('status')
-      if (saved) {
-        const s = JSON.parse(saved)
-        if (s?.system_name) apply(s.system_name)
-        if (s?.logo) applyFaviconToDom(s.logo)
-      }
-    } catch {
-      /* empty */
-    }
-    // Background refresh
+    document.title = BROWSER_BRAND_NAME
+    const metaTitle = document.querySelector(
+      'meta[name="title"]'
+    ) as HTMLMetaElement | null
+    if (metaTitle) metaTitle.setAttribute('content', BROWSER_BRAND_NAME)
+    applyFaviconToDom(BROWSER_FAVICON)
+
     getStatus()
       .then((s) => {
-        if (s?.system_name) {
-          apply(s.system_name as string)
-          try {
-            localStorage.setItem('status', JSON.stringify(s))
-          } catch {
-            /* empty */
-          }
+        try {
+          localStorage.setItem('status', JSON.stringify(s))
+        } catch {
+          /* empty */
         }
-        if (s?.logo) applyFaviconToDom(s.logo as string)
       })
       .catch(() => {
         /* empty */

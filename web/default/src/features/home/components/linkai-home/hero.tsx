@@ -89,7 +89,7 @@ export function LinkAiHero(props: HeroProps) {
         <div className='mx-auto mt-12 grid max-w-[950px] gap-4 sm:grid-cols-2 lg:mt-[52px] lg:gap-7'>
           <Link
             to={props.isAuthenticated ? '/dashboard' : '/sign-up'}
-            className='group relative min-h-28 overflow-hidden rounded-full border border-white/15 p-5 text-left transition-[transform,border-color,box-shadow] duration-500 ease-out hover:-translate-y-2 hover:scale-[1.015] hover:border-white/45 hover:shadow-[0_24px_60px_-22px_rgba(133,91,255,0.85)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none lg:min-h-32'
+            className='group relative flex min-h-28 flex-col items-center justify-center overflow-hidden rounded-full border border-white/15 p-5 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:-translate-y-2 hover:scale-[1.015] hover:border-white/45 hover:shadow-[0_24px_60px_-22px_rgba(133,91,255,0.85)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none lg:min-h-32'
           >
             <img
               src={LINKAI_HOME_ASSETS.heroEnterpriseButton}
@@ -111,7 +111,7 @@ export function LinkAiHero(props: HeroProps) {
           </Link>
           <Link
             to={props.isAuthenticated ? '/chat2link' : '/sign-up'}
-            className='group relative min-h-28 overflow-hidden rounded-full border border-white/20 p-5 text-left transition-[transform,border-color,box-shadow] duration-500 ease-out hover:-translate-y-2 hover:scale-[1.015] hover:border-white/45 hover:shadow-[0_24px_60px_-22px_rgba(85,203,255,0.8)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none lg:min-h-32'
+            className='group relative flex min-h-28 flex-col items-center justify-center overflow-hidden rounded-full border border-white/20 p-5 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:-translate-y-2 hover:scale-[1.015] hover:border-white/45 hover:shadow-[0_24px_60px_-22px_rgba(85,203,255,0.8)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white active:translate-y-0 active:scale-[0.99] motion-reduce:transform-none motion-reduce:transition-none lg:min-h-32'
           >
             <img
               src={LINKAI_HOME_ASSETS.heroPersonalButton}
