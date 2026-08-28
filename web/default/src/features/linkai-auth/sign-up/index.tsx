@@ -33,8 +33,8 @@ export function LinkAiSignUpPage() {
     <LinkAiAuthShell
       assetRoot={SIGN_UP_ASSET_ROOT}
       backgroundFile='raw-01.png'
-      backgroundOverlayFile='raw-06.png'
-      panelFile='raw-05.png'
+      backgroundOverlayFile='raw-06.avif'
+      panelFile='raw-05.avif'
       splitLogo
     >
       <div className='mx-auto block w-full max-w-[504px] px-5 py-10 sm:px-0'>

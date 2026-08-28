@@ -62,6 +62,7 @@ export function LinkAiHero(props: HeroProps) {
           alt=''
           width={1938}
           height={1142}
+          decoding='async'
           className='h-full w-full object-cover object-top'
         />
         <img
@@ -69,6 +70,7 @@ export function LinkAiHero(props: HeroProps) {
           alt=''
           width={1505}
           height={522}
+          decoding='async'
           className='absolute top-[8%] left-1/2 w-[78%] max-w-[1505px] -translate-x-1/2 object-contain'
         />
       </div>

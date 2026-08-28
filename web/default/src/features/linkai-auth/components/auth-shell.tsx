@@ -37,8 +37,8 @@ export function LinkAiAuthShell({
   panelClassName = '',
   assetRoot = AUTH_ASSET_ROOT,
   backgroundFile = 'raw-01.png',
-  backgroundOverlayFile = 'raw-02.png',
-  panelFile = 'raw-04.png',
+  backgroundOverlayFile = 'raw-02.avif',
+  panelFile = 'raw-04.avif',
   splitLogo = false,
 }: LinkAiAuthShellProps) {
   const { t } = useTranslation()
@@ -49,12 +49,15 @@ export function LinkAiAuthShell({
         <img
           src={`${assetRoot}/${backgroundFile}`}
           alt=''
+          decoding='async'
           className='h-full w-full object-cover object-center'
           aria-hidden='true'
         />
         <img
           src={`${assetRoot}/${backgroundOverlayFile}`}
           alt=''
+          decoding='async'
+          fetchPriority='high'
           className='absolute inset-0 h-full w-full object-cover object-center opacity-[0.14]'
           aria-hidden='true'
         />
@@ -103,6 +106,7 @@ export function LinkAiAuthShell({
           <img
             src={`${assetRoot}/${panelFile}`}
             alt=''
+            decoding='async'
             className='pointer-events-none absolute inset-0 -z-10 h-full w-full object-fill'
             aria-hidden='true'
           />

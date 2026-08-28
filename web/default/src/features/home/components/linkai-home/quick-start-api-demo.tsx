@@ -72,6 +72,8 @@ export function LinkAiQuickStartApiDemo() {
         alt=''
         width={785}
         height={697}
+        loading='lazy'
+        decoding='async'
         className='pointer-events-none absolute right-[-22%] bottom-[-7%] h-[107%] w-[94%] object-cover opacity-70'
       />
       <div className='relative z-10 flex shrink-0 items-center justify-between gap-4 border-b border-white/10 px-5 sm:px-8'>

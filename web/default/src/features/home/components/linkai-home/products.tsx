@@ -39,6 +39,8 @@ function ProductCard(props: ProductCardProps) {
         alt=''
         width={771}
         height={1064}
+        loading='lazy'
+        decoding='async'
         className='absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.025]'
       />
       <div className='absolute inset-0 bg-linear-to-b from-black/0 via-black/5 to-black/25' />
@@ -155,6 +157,8 @@ export function LinkAiProducts() {
           alt=''
           width={1920}
           height={1295}
+          loading='lazy'
+          decoding='async'
           className='absolute inset-0 h-full w-full object-cover'
         />
         <div className='relative z-10 mx-auto h-full max-w-[1920px] px-5 sm:px-8 lg:px-[5vw]'>
@@ -163,6 +167,8 @@ export function LinkAiProducts() {
             alt={t('linkaiHome.brand.imageAlt')}
             width={931}
             height={956}
+            loading='lazy'
+            decoding='async'
             className='mx-auto mt-8 h-auto w-[min(92vw,930px)] object-contain lg:absolute lg:top-[261px] lg:left-[calc(50%+22px)] lg:mt-0 lg:w-[931px] lg:-translate-x-1/2'
           />
         </div>

@@ -59,6 +59,7 @@ export function LinkAiTeamCta(props: TeamCtaProps) {
             width={1561}
             height={736}
             loading='lazy'
+            decoding='async'
             className='aspect-[1561/736] w-full object-cover'
           />
           <div className='absolute inset-x-0 bottom-7 flex justify-center sm:bottom-12'>
@@ -88,6 +89,8 @@ export function LinkAiLandingFooter() {
         alt=''
         width={1920}
         height={2796}
+        loading='lazy'
+        decoding='async'
         className='pointer-events-none absolute inset-0 h-full w-full object-cover object-bottom opacity-80 lg:hidden'
       />
       <div className='relative z-10 mx-auto h-full max-w-[1572px]'>

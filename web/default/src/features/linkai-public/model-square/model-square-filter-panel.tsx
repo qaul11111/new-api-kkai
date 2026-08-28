@@ -47,7 +47,7 @@ export function ModelSquareFilterPanel(props: ModelSquareFilterPanelProps) {
         className='mx-auto max-h-[min(68vh,486px)] w-full max-w-[1828px] overflow-auto rounded-b-[22px] border-x border-b border-white/10 bg-[#050505] shadow-[0_28px_90px_rgba(0,0,0,0.72)]'
         style={{
           backgroundImage:
-            "url('/figma/linkai-model-square/filter-panel-background.png')",
+            "url('/figma/linkai-model-square/filter-panel-background.avif')",
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           backgroundSize: '100% 100%',

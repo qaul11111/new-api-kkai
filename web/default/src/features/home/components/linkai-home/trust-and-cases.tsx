@@ -42,6 +42,8 @@ function TrustCard(props: TrustCardProps) {
         alt=''
         width={548}
         height={420}
+        loading='lazy'
+        decoding='async'
         className='absolute inset-0 h-full w-full object-cover'
       />
       <div className='absolute inset-0 bg-linear-to-b from-black/10 via-black/20 to-black/55' />
@@ -111,6 +113,8 @@ export function LinkAiTrustAndCases() {
               alt=''
               width={919}
               height={613}
+              loading='lazy'
+              decoding='async'
               className='pointer-events-none absolute top-0 left-1/2 hidden w-[min(58vw,919px)] -translate-x-1/2 object-contain lg:block'
             />
             <div className='relative z-10 grid gap-6 lg:w-full lg:grid-cols-3 lg:gap-[clamp(1.5rem,2.55vw,49px)]'>
@@ -137,6 +141,8 @@ export function LinkAiTrustAndCases() {
           alt=''
           width={1920}
           height={2796}
+          loading='lazy'
+          decoding='async'
           className='pointer-events-none absolute inset-x-0 top-[72px] hidden h-[2796px] w-full object-fill lg:block'
         />
         <div className='relative z-10 mx-auto max-w-[1728px]'>
@@ -153,6 +159,7 @@ export function LinkAiTrustAndCases() {
                   width={748}
                   height={534}
                   loading='lazy'
+                  decoding='async'
                   className='aspect-[748/534] w-full rounded-3xl object-cover'
                 />
                 <h3 className='mt-8 text-2xl font-bold text-white sm:text-3xl lg:mt-[68px] lg:text-4xl'>
