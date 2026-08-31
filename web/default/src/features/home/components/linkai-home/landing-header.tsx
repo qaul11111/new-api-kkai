@@ -79,15 +79,15 @@ export function LinkAiLandingHeader() {
         className={cn(
           'pointer-events-auto mx-auto transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
           scrolled
-            ? 'max-w-[1200px] px-3 pt-3'
+            ? 'max-w-[1200px] px-3 py-3'
             : LINKAI_HEADER_EXPANDED_CONTAINER_CLASS
         )}
       >
         <div
           className={cn(
-            'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-5 border transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
+            'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-5 border transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
             scrolled
-              ? 'min-h-16 rounded-2xl border-white/12 bg-black/70 px-4 py-2 shadow-[0_12px_40px_-18px_rgba(0,0,0,0.9)] backdrop-blur-2xl'
+              ? 'h-14 rounded-2xl border-white/12 bg-black/70 px-4 py-0 shadow-[0_12px_40px_-18px_rgba(0,0,0,0.9)] backdrop-blur-2xl'
               : LINKAI_HEADER_EXPANDED_ROW_CLASS
           )}
         >

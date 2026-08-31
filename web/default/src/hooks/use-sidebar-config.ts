@@ -19,6 +19,11 @@ For commercial licensing, please contact support@quantumnous.com
 import { useMemo } from 'react'
 
 import type { NavGroup, NavItem } from '@/components/layout/types'
+import {
+  resolveUsageLogsFeatureFlags,
+  USAGE_LOGS_SECTION_URLS,
+  type UsageLogsFeatureFlags,
+} from '@/features/usage-logs/lib/section-access'
 import { useStatus } from '@/hooks/use-status'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -122,9 +127,18 @@ const URL_TO_CONFIG_MAP: Record<string, { section: string; module: string }> = {
 }
 
 /**
+ * URLs additionally gated by legacy system feature flags from `/api/status`
+ * (`enable_drawing` / `enable_task`), on top of the sidebar module config.
+ */
+const URL_FEATURE_FLAG_KEYS: Record<string, keyof UsageLogsFeatureFlags> = {
+  [USAGE_LOGS_SECTION_URLS.drawing]: 'enableDrawing',
+  [USAGE_LOGS_SECTION_URLS.task]: 'enableTask',
+}
+
+/**
  * Parse backend SidebarModulesAdmin configuration
  */
-function parseSidebarConfig(
+export function parseSidebarConfig(
   value: string | null | undefined
 ): SidebarModulesAdminConfig {
   // If empty string, null, or undefined, use default config
@@ -166,13 +180,19 @@ function parseUserSidebarConfig(
  * Check if a module is enabled. Admin config is the first (authoritative)
  * layer: if admin disables a section/module it is always hidden. User config
  * is a second narrower layer: it can only further hide what admin allowed.
- * A null user config means "do not narrow" (legacy/empty users).
+ * A null user config means "do not narrow" (legacy/empty users). URLs listed
+ * in URL_FEATURE_FLAG_KEYS additionally require their legacy system feature
+ * flag (e.g. enable_drawing) to be on.
  */
 function isModuleEnabled(
   url: string,
   adminConfig: SidebarModulesAdminConfig,
-  userConfig: SidebarModulesUserConfig
+  userConfig: SidebarModulesUserConfig,
+  featureFlags: UsageLogsFeatureFlags
 ): boolean {
+  const flagKey = URL_FEATURE_FLAG_KEYS[url]
+  if (flagKey && !featureFlags[flagKey]) return false
+
   const mapping = URL_TO_CONFIG_MAP[url]
   if (!mapping) {
     // No mapping config, default to visible (e.g. system settings and new features)
@@ -200,7 +220,8 @@ function isModuleEnabled(
 function isNavItemVisible(
   item: NavItem,
   adminConfig: SidebarModulesAdminConfig,
-  userConfig: SidebarModulesUserConfig
+  userConfig: SidebarModulesUserConfig,
+  featureFlags: UsageLogsFeatureFlags
 ): boolean {
   // Handle dynamic chat presets type — also runs the admin × user AND gate
   if ('type' in item && item.type === 'chat-presets') {
@@ -218,7 +239,7 @@ function isNavItemVisible(
   if ('url' in item && item.url) {
     const configUrls = item.configUrls ?? [item.url]
     return configUrls.some((url) =>
-      isModuleEnabled(url as string, adminConfig, userConfig)
+      isModuleEnabled(url as string, adminConfig, userConfig, featureFlags)
     )
   }
 
@@ -226,7 +247,12 @@ function isNavItemVisible(
   if ('items' in item && item.items) {
     // If has sub-items, show this collapsible item if at least one sub-item is visible
     return item.items.some((subItem) =>
-      isModuleEnabled(subItem.url as string, adminConfig, userConfig)
+      isModuleEnabled(
+        subItem.url as string,
+        adminConfig,
+        userConfig,
+        featureFlags
+      )
     )
   }
 
@@ -239,14 +265,20 @@ function isNavItemVisible(
 function filterNavItems(
   items: NavItem[],
   adminConfig: SidebarModulesAdminConfig,
-  userConfig: SidebarModulesUserConfig
+  userConfig: SidebarModulesUserConfig,
+  featureFlags: UsageLogsFeatureFlags
 ): NavItem[] {
   return items
     .map((item) => {
       // If collapsible item, also filter its sub-items
       if ('items' in item && item.items) {
         const filteredSubItems = item.items.filter((subItem) =>
-          isModuleEnabled(subItem.url as string, adminConfig, userConfig)
+          isModuleEnabled(
+            subItem.url as string,
+            adminConfig,
+            userConfig,
+            featureFlags
+          )
         )
 
         return {
@@ -256,7 +288,41 @@ function filterNavItems(
       }
       return item
     })
-    .filter((item) => isNavItemVisible(item, adminConfig, userConfig))
+    .filter((item) =>
+      isNavItemVisible(item, adminConfig, userConfig, featureFlags)
+    )
+}
+
+/**
+ * Non-hook sources needed to resolve sidebar module visibility. This mirrors
+ * what `useSidebarConfig` reads reactively so non-React callers (route
+ * guards) can apply the exact same judgment.
+ */
+export type SidebarModuleVisibilitySources = {
+  /** `status.SidebarModulesAdmin` (JSON string) */
+  sidebarModulesAdmin?: string | null
+  /** `auth.user.sidebar_modules` (JSON string) */
+  userSidebarModules?: string | null
+  /** `auth.user.permissions?.sidebar_settings` */
+  sidebarSettingsPermission?: boolean
+  /** `/api/status` payload, used for the legacy enable_drawing/enable_task flags */
+  status?: Record<string, unknown> | null
+}
+
+/**
+ * Build the single "is this URL visible" predicate shared by the sidebar,
+ * command menu, in-page section tabs, and route-level guards.
+ */
+export function createSidebarModuleVisibility(
+  sources: SidebarModuleVisibilitySources
+): (url: string) => boolean {
+  const adminConfig = parseSidebarConfig(sources.sidebarModulesAdmin)
+  const userConfig =
+    sources.sidebarSettingsPermission === false
+      ? null
+      : parseUserSidebarConfig(sources.userSidebarModules)
+  const featureFlags = resolveUsageLogsFeatureFlags(sources.status)
+  return (url) => isModuleEnabled(url, adminConfig, userConfig, featureFlags)
 }
 
 /**
@@ -274,6 +340,8 @@ function filterNavItems(
  *      user cannot configure sidebar_settings (e.g. root accounts), so a
  *      stale historical value cannot lock them out of entries they have no
  *      UI to restore.
+ *   3. Legacy system feature flags (`enable_drawing` / `enable_task` from
+ *      /api/status) further gate the drawing/task log URLs on every surface.
  */
 export function useSidebarConfig(navGroups: NavGroup[]): NavGroup[] {
   const { status } = useStatus()
@@ -299,15 +367,26 @@ export function useSidebarConfig(navGroups: NavGroup[]): NavGroup[] {
     return parseUserSidebarConfig(auth?.user?.sidebar_modules)
   }, [auth?.user?.permissions?.sidebar_settings, auth?.user?.sidebar_modules])
 
+  const featureFlags = useMemo(
+    () =>
+      resolveUsageLogsFeatureFlags(status as Record<string, unknown> | null),
+    [status]
+  )
+
   const filteredNavGroups = useMemo(
     () =>
       navGroups
         .map((group) => ({
           ...group,
-          items: filterNavItems(group.items, adminConfig, userConfig),
+          items: filterNavItems(
+            group.items,
+            adminConfig,
+            userConfig,
+            featureFlags
+          ),
         }))
         .filter((group) => group.items.length > 0), // Only show navigation groups with visible items
-    [navGroups, adminConfig, userConfig]
+    [navGroups, adminConfig, userConfig, featureFlags]
   )
 
   return filteredNavGroups
@@ -322,13 +401,13 @@ export function useIsSidebarModuleVisible(url: string): boolean {
   const { status } = useStatus()
   const { auth } = useAuthStore()
 
-  const adminConfig = parseSidebarConfig(
-    status?.SidebarModulesAdmin as string | null | undefined
-  )
-  const userConfig =
-    auth?.user?.permissions?.sidebar_settings === false
-      ? null
-      : parseUserSidebarConfig(auth?.user?.sidebar_modules)
-
-  return isModuleEnabled(url, adminConfig, userConfig)
+  return createSidebarModuleVisibility({
+    sidebarModulesAdmin: status?.SidebarModulesAdmin as
+      | string
+      | null
+      | undefined,
+    userSidebarModules: auth?.user?.sidebar_modules,
+    sidebarSettingsPermission: auth?.user?.permissions?.sidebar_settings,
+    status: status as Record<string, unknown> | null,
+  })(url)
 }

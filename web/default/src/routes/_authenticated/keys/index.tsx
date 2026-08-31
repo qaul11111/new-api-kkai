@@ -19,8 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute } from '@tanstack/react-router'
 import z from 'zod'
 
-import { ApiKeys } from '@/features/keys'
 import { API_KEY_STATUS_OPTIONS } from '@/features/keys/constants'
+import { LinkAiApiKeys } from '@/features/linkai-console'
 
 const apiKeySearchSchema = z.object({
   page: z.number().optional().catch(1),
@@ -35,5 +35,5 @@ const apiKeySearchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/keys/')({
   validateSearch: apiKeySearchSchema,
-  component: ApiKeys,
+  component: LinkAiApiKeys,
 })

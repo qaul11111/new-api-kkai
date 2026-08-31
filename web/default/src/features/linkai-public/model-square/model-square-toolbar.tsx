@@ -148,7 +148,7 @@ export function ModelSquareToolbar(props: ModelSquareToolbarProps) {
   return (
     <div
       ref={toolbarRef}
-      className='sticky top-[104px] z-40 border-b border-white/10 bg-black/95 text-white backdrop-blur-xl lg:top-[135px]'
+      className='sticky top-20 z-40 border-b border-white/10 bg-black/95 text-white backdrop-blur-xl'
     >
       <div className='mx-auto flex min-h-16 w-full max-w-[1920px] flex-col gap-3 px-5 py-3 sm:px-8 xl:flex-row xl:items-center xl:justify-between xl:px-[3.38vw]'>
         <div className='no-scrollbar flex items-center gap-8 overflow-x-auto pb-1 xl:gap-9 xl:pb-0'>

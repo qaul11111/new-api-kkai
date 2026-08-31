@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
+import { Gauge, TimerReset, Waypoints } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Skeleton } from '@/components/ui/skeleton'
@@ -47,7 +48,9 @@ function StatBadge(props: {
   )
 }
 
-export function CommonLogsStats() {
+export function CommonLogsStats(props: {
+  variant?: 'compact' | 'linkai-cards'
+}) {
   const { t } = useTranslation()
   const { isAdminView: isAdmin } = useLogsViewScope()
   const searchParams = route.useSearch()
@@ -76,12 +79,51 @@ export function CommonLogsStats() {
   })
 
   if (isLoading) {
+    if (props.variant === 'linkai-cards') {
+      return (
+        <div className='linkai-log-metric-grid' aria-hidden='true'>
+          {Array.from({ length: 3 }, (_, index) => (
+            <Skeleton key={index} className='h-32 rounded-[14px]' />
+          ))}
+        </div>
+      )
+    }
     return (
       <div className='flex items-center gap-2'>
         <Skeleton className='h-7 w-[150px] rounded-md' />
         <Skeleton className='h-7 w-[100px] rounded-md' />
         <Skeleton className='h-7 w-[120px] rounded-md' />
       </div>
+    )
+  }
+
+  if (props.variant === 'linkai-cards') {
+    return (
+      <section className='linkai-log-metric-grid' aria-label={t('Usage')}>
+        <article className='linkai-log-metric-card'>
+          <span>
+            <Gauge aria-hidden='true' />
+          </span>
+          <p>{t('Usage')}</p>
+          <strong>
+            {sensitiveVisible ? formatLogQuota(stats?.quota || 0) : '••••'}
+          </strong>
+        </article>
+        <article className='linkai-log-metric-card'>
+          <span>
+            <TimerReset aria-hidden='true' />
+          </span>
+          <p>{t('RPM')}</p>
+          <strong>{stats?.rpm || 0}</strong>
+        </article>
+        <article className='linkai-log-metric-card'>
+          <span>
+            <Waypoints aria-hidden='true' />
+          </span>
+          <p>{t('TPM')}</p>
+          <strong>{stats?.tpm || 0}</strong>
+        </article>
+      </section>
     )
   }
 

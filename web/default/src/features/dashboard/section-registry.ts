@@ -49,7 +49,26 @@ const DASHBOARD_SECTIONS = [
 
 export type DashboardSectionId = (typeof DASHBOARD_SECTIONS)[number]['id']
 
-const ADMIN_ONLY_SECTIONS = new Set<string>(['users'])
+/**
+ * Admin-only knowledge lives on each section definition (`adminOnly: true`)
+ * and is derived here exactly once, so the route guard and the nav filter
+ * can never drift apart when a new admin-only section is registered.
+ */
+const ADMIN_ONLY_SECTION_IDS: ReadonlySet<string> = new Set(
+  DASHBOARD_SECTIONS.filter(
+    (section) => 'adminOnly' in section && section.adminOnly
+  ).map((section) => section.id)
+)
+
+/**
+ * Single source of truth for "this dashboard section requires an admin
+ * role". Consumed by the `/dashboard/$section` route guard and by
+ * {@link getDashboardSectionNavItems}; a future section only needs
+ * `adminOnly: true` on its registry entry to be denied to non-admins.
+ */
+export function isAdminOnlyDashboardSection(sectionId: string): boolean {
+  return ADMIN_ONLY_SECTION_IDS.has(sectionId)
+}
 
 const dashboardRegistry = createSectionRegistry<
   DashboardSectionId,
@@ -72,6 +91,6 @@ export function getDashboardSectionNavItems(
   const all = dashboardRegistry.getSectionNavItems(t)
   if (options?.isAdmin) return all
   return all.filter(
-    (_, idx) => !ADMIN_ONLY_SECTIONS.has(DASHBOARD_SECTIONS[idx].id)
+    (_, idx) => !isAdminOnlyDashboardSection(DASHBOARD_SECTIONS[idx].id)
   )
 }

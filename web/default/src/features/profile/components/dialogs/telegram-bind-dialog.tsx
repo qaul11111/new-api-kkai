@@ -16,11 +16,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Send } from 'lucide-react'
+import { Loader2, Send } from 'lucide-react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { TelegramLoginWidget } from '@/features/auth/components/telegram-login-widget'
+import type { TelegramAuthPayload } from '@/features/auth/types'
+
+import { bindTelegramAccount } from '../../api'
 
 // ============================================================================
 // Telegram Bind Dialog Component
@@ -37,12 +43,39 @@ export function TelegramBindDialog({
   open,
   onOpenChange,
   botName,
+  onSuccess,
 }: TelegramBindDialogProps) {
   const { t } = useTranslation()
+  const [isBinding, setIsBinding] = useState(false)
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) setIsBinding(false)
+    onOpenChange(nextOpen)
+  }
+
+  const handleTelegramAuth = async (payload: TelegramAuthPayload) => {
+    if (isBinding) return
+    setIsBinding(true)
+    try {
+      const res = await bindTelegramAccount(payload)
+      if (res.success) {
+        toast.success(t('Telegram account bound successfully'))
+        handleOpenChange(false)
+        onSuccess()
+      } else {
+        toast.error(res.message || t('Failed to bind Telegram account'))
+      }
+    } catch {
+      toast.error(t('Failed to bind Telegram account'))
+    } finally {
+      setIsBinding(false)
+    }
+  }
+
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={handleOpenChange}
       title={t('Bind Telegram Account')}
       description={t('Click the button below to bind your Telegram account')}
       contentClassName='sm:max-w-md'
@@ -54,7 +87,7 @@ export function TelegramBindDialog({
           <Send className='h-4 w-4' />
           <AlertDescription>
             {t(
-              'You will be redirected to Telegram to complete the binding process.'
+              'Authorize the bot with your Telegram account to complete the binding.'
             )}
           </AlertDescription>
         </Alert>
@@ -76,11 +109,15 @@ export function TelegramBindDialog({
             </p>
           </div>
 
-          {/* Telegram Login Widget will be injected here by react-telegram-login */}
-          <div id='telegram-login-widget' className='flex justify-center'>
-            {/* This would require the react-telegram-login library */}
-            <div className='text-muted-foreground rounded-lg border border-dashed px-6 py-3 text-sm'>
-              {t('Telegram Login Widget')}
+          <div className='relative flex min-h-[40px] items-center justify-center'>
+            {isBinding && (
+              <Loader2 className='text-muted-foreground absolute h-5 w-5 animate-spin' />
+            )}
+            <div className={isBinding ? 'opacity-40' : undefined}>
+              <TelegramLoginWidget
+                botName={botName}
+                onAuth={(payload) => void handleTelegramAuth(payload)}
+              />
             </div>
           </div>
         </div>

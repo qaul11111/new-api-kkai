@@ -27,7 +27,10 @@ import { useChartTheme } from '@/lib/use-chart-theme'
 import { cn } from '@/lib/utils'
 import { VCHART_OPTION } from '@/lib/vchart'
 
-import type { LatencyTimePoint, UptimeDayPoint } from '../lib/mock-stats'
+import type {
+  LatencyTimePoint,
+  UptimeDayPoint,
+} from '../lib/performance-series'
 
 function formatHourLabel(iso: string): string {
   const date = new Date(iso)
@@ -65,7 +68,7 @@ function getChartThemeTokens(resolvedTheme: string) {
 
 const UPTIME_AXIS_MAX = 100
 const UPTIME_FOCUSED_AXIS_MIN = 95
-const UPTIME_MINOR_OUTAGE_AXIS_MIN = 90
+const UPTIME_DEGRADED_AXIS_MIN = 90
 
 function toUptimeChartValue(value: number): number {
   if (!Number.isFinite(value)) return 0
@@ -78,8 +81,8 @@ function getUptimeAxisMin(values: number[]): number {
 
   const minValue = Math.max(0, Math.min(...finiteValues))
   if (minValue >= UPTIME_FOCUSED_AXIS_MIN) return UPTIME_FOCUSED_AXIS_MIN
-  if (minValue >= UPTIME_MINOR_OUTAGE_AXIS_MIN) {
-    return UPTIME_MINOR_OUTAGE_AXIS_MIN
+  if (minValue >= UPTIME_DEGRADED_AXIS_MIN) {
+    return UPTIME_DEGRADED_AXIS_MIN
   }
 
   return Math.max(0, Math.floor((minValue - 5) / 10) * 10)
@@ -205,8 +208,6 @@ export function UptimeTrendChart(props: {
     const rawData = props.series.map((point) => ({
       date: formatDayLabel(point.date),
       uptime: toUptimeChartValue(point.uptime_pct),
-      incidents: point.incidents,
-      outage: point.outage_minutes,
     }))
     const data =
       rawData.length === 1
@@ -245,14 +246,6 @@ export function UptimeTrendChart(props: {
             {
               key: t('Uptime'),
               value: (d: { uptime: number }) => `${d.uptime.toFixed(2)}%`,
-            },
-            {
-              key: t('Incidents'),
-              value: (d: { incidents: number }) => `${d.incidents}`,
-            },
-            {
-              key: t('Outage'),
-              value: (d: { outage: number }) => `${d.outage} ${t('minutes')}`,
             },
           ],
         },

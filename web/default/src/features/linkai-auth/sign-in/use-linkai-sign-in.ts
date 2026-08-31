@@ -18,18 +18,20 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useSearch } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import type { z } from 'zod'
 
-import { login } from '@/features/auth/api'
+import { login, wechatLoginByCode } from '@/features/auth/api'
+import { resolveWeChatQrCodeUrl } from '@/features/auth/components/wechat-qr-code'
 import { loginFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useOAuthLogin } from '@/features/auth/hooks/use-oauth-login'
 import { useTurnstile } from '@/features/auth/hooks/use-turnstile'
 import { beginPasskeyLogin, finishPasskeyLogin } from '@/features/auth/passkey'
+import type { TelegramAuthPayload } from '@/features/auth/types'
 import { useStatus } from '@/hooks/use-status'
 import {
   buildAssertionResult,
@@ -49,6 +51,9 @@ export function useLinkAiSignIn() {
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false)
   const [passkeySupported, setPasskeySupported] = useState(false)
   const [agreedToLegal, setAgreedToLegal] = useState(false)
+  const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
+  const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
+  const weChatSubmittingRef = useRef(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const turnstile = useTurnstile()
   const form = useForm<LinkAiLoginFields>({
@@ -59,12 +64,37 @@ export function useLinkAiSignIn() {
   const requiresLegalConsent = Boolean(
     status?.user_agreement_enabled || status?.privacy_policy_enabled
   )
+  const passwordLoginEnabled =
+    (status?.password_login_enabled ??
+      status?.data?.password_login_enabled ??
+      true) !== false
+  const passkeyAvailable =
+    Boolean(status?.passkey_login ?? status?.data?.passkey_login) &&
+    passkeySupported
+  const registrationAvailable =
+    !status?.self_use_mode_enabled && status?.register_enabled !== false
+  const telegramBotName =
+    typeof status?.telegram_bot_name === 'string'
+      ? status.telegram_bot_name
+      : ''
+  const telegramLoginEnabled = Boolean(
+    status?.telegram_oauth && telegramBotName
+  )
+  const wechatQrCodeUrl = resolveWeChatQrCodeUrl(status)
 
   useEffect(() => {
     detectPasskeySupport()
       .then(setPasskeySupported)
       .catch(() => setPasskeySupported(false))
   }, [])
+
+  const guardAuthAction = (action: () => void | Promise<void>) => {
+    if (requiresLegalConsent && !agreedToLegal) {
+      toast.error(t('Please agree to the legal terms first'))
+      return
+    }
+    void action()
+  }
 
   async function onSubmit(data: LinkAiLoginFields) {
     if (requiresLegalConsent && !agreedToLegal) {
@@ -102,15 +132,35 @@ export function useLinkAiSignIn() {
     }
   }
 
-  const requireConfigured = (
-    isConfigured: boolean,
-    callback: () => void | Promise<void>
-  ) => {
-    if (!isConfigured) {
-      toast.info(t('This sign-in method is not configured'))
-      return
+  function handleOpenWeChatDialog() {
+    setIsWeChatDialogOpen(true)
+  }
+
+  async function handleWeChatLogin(code: string) {
+    // Synchronous re-entry guard: two submissions in the same tick must not
+    // both reach the backend before the disabled state can propagate.
+    if (weChatSubmittingRef.current) return
+    weChatSubmittingRef.current = true
+    setIsWeChatSubmitting(true)
+    try {
+      const res = await wechatLoginByCode(code)
+      if (res?.success) {
+        await handleLoginSuccess(res.data as { id?: number } | null, redirect)
+        toast.success(t('Signed in via WeChat'))
+        setIsWeChatDialogOpen(false)
+      } else {
+        toast.error(res?.message || t('Login failed'))
+      }
+    } catch {
+      toast.error(t('Login failed'))
+    } finally {
+      weChatSubmittingRef.current = false
+      setIsWeChatSubmitting(false)
     }
-    void callback()
+  }
+
+  function handleTelegramAuth(payload: TelegramAuthPayload) {
+    guardAuthAction(() => oauth.handleTelegramAuth(payload, redirect))
   }
 
   async function handlePasskeyLogin() {
@@ -118,7 +168,7 @@ export function useLinkAiSignIn() {
       toast.error(t('Please agree to the legal terms first'))
       return
     }
-    if (!status?.passkey_login || !passkeySupported) {
+    if (!passkeyAvailable) {
       toast.info(t('Passkey sign-in is not available on this device'))
       return
     }
@@ -162,17 +212,29 @@ export function useLinkAiSignIn() {
   return {
     agreedToLegal,
     form,
+    guardAuthAction,
+    handleOpenWeChatDialog,
     handlePasskeyLogin,
+    handleTelegramAuth,
+    handleWeChatLogin,
     isLoading,
     isPasskeyLoading,
+    isWeChatDialogOpen,
+    isWeChatSubmitting,
     oauth,
     onSubmit,
-    requireConfigured,
+    passkeyAvailable,
+    passwordLoginEnabled,
+    registrationAvailable,
     requiresLegalConsent,
     setAgreedToLegal,
+    setIsWeChatDialogOpen,
     status,
+    telegramBotName,
+    telegramLoginEnabled,
     turnstile,
     turnstileWidgetKey,
+    wechatQrCodeUrl,
   }
 }
 

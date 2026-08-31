@@ -25,6 +25,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { IconBadge, type IconBadgeTone } from '@/components/ui/icon-badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
+import dayjs from '@/lib/dayjs'
 import { formatCompactNumber, formatQuota } from '@/lib/format'
 import { getRoleLabel } from '@/lib/roles'
 
@@ -38,12 +39,33 @@ import type { UserProfile } from '../types'
 interface ProfileHeaderProps {
   profile: UserProfile | null
   loading: boolean
+  variant?: 'default' | 'linkai'
 }
 
-export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
+export function ProfileHeader({
+  profile,
+  loading,
+  variant = 'default',
+}: ProfileHeaderProps) {
   const { t } = useTranslation()
 
   if (loading) {
+    if (variant === 'linkai') {
+      return (
+        <section className='linkai-profile-hero linkai-profile-hero--loading'>
+          <div className='linkai-profile-hero-cover' />
+          <div className='linkai-profile-hero-body'>
+            <Skeleton className='linkai-profile-hero-avatar' />
+            <div className='min-w-0 flex-1 space-y-3'>
+              <Skeleton className='h-7 w-48' />
+              <Skeleton className='h-5 w-80 max-w-full' />
+            </div>
+            <Skeleton className='h-20 w-80 max-w-full rounded-2xl' />
+          </div>
+        </section>
+      )
+    }
+
     return (
       <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
         <CardContent className='p-4 sm:p-5'>
@@ -113,6 +135,64 @@ export function ProfileHeader({ profile, loading }: ProfileHeaderProps) {
       tone: 'chart-4',
     },
   ]
+
+  if (variant === 'linkai') {
+    const createdAt = profile.created_time
+      ? dayjs.unix(profile.created_time).format('YYYY-MM-DD')
+      : '—'
+
+    return (
+      <section className='linkai-profile-hero'>
+        <div className='linkai-profile-hero-cover' aria-hidden='true' />
+        <div className='linkai-profile-hero-body'>
+          <Avatar className='linkai-profile-hero-avatar'>
+            <AvatarFallback
+              className='font-semibold text-white'
+              style={avatarFallbackStyle}
+            >
+              {avatarFallback}
+            </AvatarFallback>
+          </Avatar>
+
+          <div className='linkai-profile-identity'>
+            <div className='linkai-profile-identity-title'>
+              <h2>{displayName}</h2>
+              <StatusBadge
+                label={roleLabel}
+                variant='neutral'
+                copyable={false}
+              />
+              {profile.group && (
+                <StatusBadge
+                  label={profile.group}
+                  variant='info'
+                  copyable={false}
+                />
+              )}
+            </div>
+
+            <div className='linkai-profile-identity-meta'>
+              <span>@{profile.username}</span>
+              {profile.email && <span>{profile.email}</span>}
+              <span>
+                {t('User ID')} {profile.id}
+              </span>
+              <span>{createdAt}</span>
+            </div>
+          </div>
+
+          <div className='linkai-profile-hero-stats'>
+            {stats.map((item) => (
+              <div key={item.label} className='linkai-profile-hero-stat'>
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>

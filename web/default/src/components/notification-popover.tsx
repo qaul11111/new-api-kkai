@@ -328,7 +328,7 @@ export function NotificationPopover({
       <PopoverContent
         align='end'
         sideOffset={8}
-        className='w-[min(26rem,calc(100vw-1rem))] gap-3 p-3'
+        className='linkai-notification-popover w-[min(26rem,calc(100vw-1rem))] gap-3 p-3'
       >
         <PopoverHeader className='gap-1 px-1'>
           <PopoverTitle>{t('System Announcements')}</PopoverTitle>
@@ -365,7 +365,7 @@ export function NotificationPopover({
           </TabsContent>
         </Tabs>
 
-        <div className='flex justify-end'>
+        <div className='linkai-notification-popover-footer flex justify-end'>
           <Button size='sm' onClick={() => onOpenChange(false)}>
             {t('Close')}
           </Button>

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
-import { AlertTriangle, HeartPulse, Timer } from 'lucide-react'
+import { HeartPulse, Timer } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -36,7 +36,7 @@ import {
 import type { PerformanceGroup } from '@/features/performance-metrics/types'
 import { cn } from '@/lib/utils'
 
-import { type UptimeDayPoint } from '../lib/mock-stats'
+import type { UptimeDayPoint } from '../lib/performance-series'
 import type { PricingModel } from '../types'
 import { LatencyTrendChart, UptimeTrendChart } from './model-details-charts'
 import { UptimeSparkline } from './model-details-uptime-sparkline'
@@ -97,7 +97,7 @@ function toLatencySeries(groups: PerformanceGroup[]) {
     }
   }
 
-  return Array.from(byTs.entries())
+  return [...byTs.entries()]
     .sort(([a], [b]) => a - b)
     .map(([ts, values]) => ({
       timestamp: new Date(ts * 1000).toISOString(),
@@ -109,45 +109,32 @@ function toLatencySeries(groups: PerformanceGroup[]) {
 }
 
 function toUptimeSeries(groups: PerformanceGroup[]): UptimeDayPoint[] {
-  const byTs = new Map<number, { rates: number[]; incidents: number }>()
+  const byTs = new Map<number, number[]>()
   for (const group of groups) {
     for (const point of group.series) {
-      const current = byTs.get(point.ts) ?? { rates: [], incidents: 0 }
-      if (Number.isFinite(point.success_rate)) {
-        const successRate = toUptimePct(point.success_rate)
-        current.rates.push(successRate)
-        if (successRate < 100) current.incidents += 1
-      }
+      if (!Number.isFinite(point.success_rate)) continue
+      const current = byTs.get(point.ts) ?? []
+      current.push(toUptimePct(point.success_rate))
       byTs.set(point.ts, current)
     }
   }
-  return Array.from(byTs.entries())
+  return [...byTs.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([ts, value]) => {
-      const uptime =
-        value.rates.length > 0
-          ? value.rates.reduce((sum, rate) => sum + rate, 0) /
-            value.rates.length
-          : 0
-      return {
-        date: new Date(ts * 1000).toISOString(),
-        uptime_pct: toUptimePct(uptime),
-        incidents: value.incidents,
-        outage_minutes: 0,
-      }
-    })
+    .map(([ts, rates]) => ({
+      date: new Date(ts * 1000).toISOString(),
+      uptime_pct: toUptimePct(
+        rates.reduce((sum, rate) => sum + rate, 0) / rates.length
+      ),
+    }))
 }
 
 function toGroupUptimeSeries(group: PerformanceGroup): UptimeDayPoint[] {
-  return group.series.map((point) => {
-    const successRate = toUptimePct(point.success_rate)
-    return {
+  return group.series
+    .filter((point) => Number.isFinite(point.success_rate))
+    .map((point) => ({
       date: new Date(point.ts * 1000).toISOString(),
-      uptime_pct: successRate,
-      incidents: successRate < 100 ? 1 : 0,
-      outage_minutes: 0,
-    }
-  })
+      uptime_pct: toUptimePct(point.success_rate),
+    }))
 }
 
 function average(
@@ -193,7 +180,15 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
     return map
   }, [groups])
 
-  if (metricsQuery.isLoading || performances.length === 0) {
+  if (metricsQuery.isLoading) {
+    return (
+      <div className='text-muted-foreground rounded-lg border p-6 text-center text-sm'>
+        {t('Loading availability data...')}
+      </div>
+    )
+  }
+
+  if (performances.length === 0) {
     return (
       <div className='text-muted-foreground rounded-lg border p-6 text-center text-sm'>
         {t('Performance data is not yet available for this model.')}
@@ -217,7 +212,6 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
       ? successRates.reduce((sum, value) => sum + value, 0) /
         successRates.length
       : 0
-  const incidentCount = uptimeSeries.reduce((s, p) => s + p.incidents, 0)
 
   return (
     <div className='flex flex-col gap-4'>
@@ -237,13 +231,7 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
           icon={HeartPulse}
           label={t('Success rate')}
           value={formatUptimePct(successRate)}
-          hint={
-            incidentCount > 0
-              ? t('{{count}} incidents in the last 24 hours', {
-                  count: incidentCount,
-                })
-              : t('No incidents in the last 24 hours')
-          }
+          hint={t('Request success rate sampled over the last 24 hours')}
           valueClassName={getSuccessRateTextClass(successRate)}
         />
       </div>
@@ -318,26 +306,7 @@ export function ModelDetailsPerformance(props: { model: PricingModel }) {
         <SectionHeader
           icon={HeartPulse}
           title={t('Availability (last 24h)')}
-          description={
-            incidentCount > 0
-              ? t(
-                  'Request success rate; {{incidents}} incident buckets in the last 24 hours',
-                  {
-                    incidents: incidentCount,
-                  }
-                )
-              : t('Request success rate sampled over the last 24 hours')
-          }
-          accent={
-            incidentCount > 0 ? (
-              <span className='inline-flex items-center gap-1 text-amber-600 dark:text-amber-400'>
-                <AlertTriangle className='size-3.5' />
-                {t('{{count}} incidents', {
-                  count: incidentCount,
-                })}
-              </span>
-            ) : null
-          }
+          description={t('Request success rate sampled over the last 24 hours')}
         />
         <UptimeTrendChart series={uptimeSeries} />
       </section>
@@ -349,7 +318,6 @@ function SectionHeader(props: {
   icon: React.ComponentType<{ className?: string }>
   title: string
   description?: string
-  accent?: React.ReactNode
 }) {
   const Icon = props.icon
   return (
@@ -367,9 +335,6 @@ function SectionHeader(props: {
           )}
         </div>
       </div>
-      {props.accent && (
-        <div className='shrink-0 text-xs font-medium'>{props.accent}</div>
-      )}
     </div>
   )
 }

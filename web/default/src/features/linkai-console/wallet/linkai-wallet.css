@@ -1,0 +1,507 @@
+.linkai-console-wallet {
+  color: #fff;
+  scrollbar-gutter: stable;
+}
+
+.linkai-wallet-page-content {
+  width: min(1398px, calc(100% - 64px));
+  min-height: 100%;
+  margin: 0 auto;
+  padding: 54px 0 64px;
+}
+
+.linkai-wallet-heading {
+  margin: 0 0 26px;
+  color: #fff;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.linkai-wallet-body {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.linkai-console-wallet .linkai-wallet-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  border: 0;
+  background: transparent;
+}
+
+.linkai-console-wallet .linkai-wallet-stat-card {
+  display: grid;
+  min-width: 0;
+  min-height: 136px;
+  grid-template-columns: 63px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  padding: 26px 28px;
+  border: 1px solid #191919;
+  border-radius: 12px;
+  background: #0a0a0a;
+}
+
+.linkai-wallet-stat-icon {
+  position: relative;
+  display: grid;
+  width: 63px;
+  height: 63px;
+  place-items: center;
+}
+
+.linkai-wallet-stat-icon-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.linkai-wallet-stat-icon-glyph {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 28px;
+  height: 28px;
+  color: #fff;
+  stroke-width: 1.8;
+}
+
+.linkai-wallet-stat-copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.linkai-wallet-stat-label {
+  overflow: hidden;
+  color: #f4f4f4;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkai-wallet-stat-description {
+  overflow: hidden;
+  color: #777;
+  font-size: 14px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linkai-wallet-stat-value {
+  color: #f5f5f5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.linkai-wallet-main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.98fr) minmax(360px, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+
+.linkai-wallet-recharge-section,
+.linkai-wallet-orders-section,
+.linkai-wallet-side-column {
+  min-width: 0;
+}
+
+.linkai-wallet-recharge-section > h2,
+.linkai-wallet-orders-section > h2 {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: 30px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.linkai-wallet-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.linkai-console-wallet [data-slot='card'] {
+  border-color: #191919;
+  border-radius: 12px;
+  background: #0a0a0a;
+  color: #fff;
+  box-shadow: none;
+}
+
+.linkai-console-wallet [data-slot='card-header'] {
+  border-color: #191919;
+  background: transparent;
+}
+
+.linkai-console-wallet .linkai-wallet-recharge-card {
+  overflow: hidden;
+  border: 1px solid #191919;
+  border-radius: 12px;
+  background: #0a0a0a;
+}
+
+.linkai-wallet-recharge-header {
+  min-height: 106px;
+  padding: 25px 28px !important;
+}
+
+.linkai-wallet-recharge-icon-shell {
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 50% !important;
+  background: #5b3b05 !important;
+}
+
+.linkai-wallet-recharge-icon {
+  width: 24px;
+  height: 24px;
+  color: #ffc857;
+  stroke-width: 1.8;
+}
+
+.linkai-wallet-card-title {
+  color: #fff;
+  font-size: 22px !important;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.linkai-wallet-card-description {
+  margin-top: 5px;
+  color: #777 !important;
+  font-size: 15px !important;
+}
+
+.linkai-wallet-recharge-content {
+  padding: 26px 28px 30px !important;
+}
+
+.linkai-console-wallet .linkai-wallet-recharge-content > div + div {
+  border-color: #1c1c1c;
+}
+
+.linkai-console-wallet .linkai-wallet-recharge-content label {
+  color: #aaa;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.linkai-console-wallet .linkai-wallet-preset-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.linkai-console-wallet .linkai-wallet-preset {
+  min-height: 124px;
+  padding: 21px 22px;
+  border-color: #1d1d1d;
+  border-radius: 14px;
+  background: #0d0d0d;
+}
+
+.linkai-console-wallet .linkai-wallet-preset:hover,
+.linkai-console-wallet .linkai-wallet-preset:focus-visible {
+  border-color: #565656;
+  background: #121212;
+}
+
+.linkai-console-wallet
+  .linkai-wallet-preset
+  > div:first-child
+  > div:first-child {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.linkai-console-wallet .linkai-wallet-custom-amount {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 0.55fr);
+}
+
+.linkai-console-wallet [data-slot='input'],
+.linkai-console-wallet [data-slot='textarea'],
+.linkai-console-wallet [role='combobox'] {
+  min-height: 46px;
+  border-color: #292929;
+  border-radius: 12px;
+  background: #111;
+  color: #fff;
+  box-shadow: none;
+}
+
+.linkai-console-wallet [data-slot='input']:focus-visible,
+.linkai-console-wallet [data-slot='textarea']:focus-visible,
+.linkai-console-wallet [role='combobox']:focus-visible {
+  border-color: #6f5a9f;
+  box-shadow: 0 0 0 3px rgb(127 89 255 / 12%);
+}
+
+.linkai-console-wallet .linkai-wallet-payment-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.linkai-console-wallet .linkai-wallet-payment-method {
+  min-height: 58px;
+  border-color: #242424;
+  background: #0d0d0d;
+}
+
+.linkai-console-wallet [data-slot='button'] {
+  border-radius: 10px;
+}
+
+.linkai-console-wallet [data-slot='alert'] {
+  border-color: rgb(139 111 255 / 24%);
+  border-radius: 12px;
+  background: rgb(108 75 255 / 7%);
+}
+
+.linkai-wallet-gift-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #161223;
+}
+
+.linkai-wallet-gift-icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  color: #a98cfb;
+  stroke-width: 1.7;
+}
+
+.linkai-wallet-orders-card {
+  min-height: 216px;
+}
+
+.linkai-wallet-orders-content {
+  display: flex;
+  min-height: 216px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 30px !important;
+}
+
+.linkai-wallet-orders-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.linkai-wallet-orders-icon {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #15121f;
+}
+
+.linkai-wallet-orders-icon svg {
+  width: 25px;
+  height: 25px;
+  color: #f0b43c;
+  stroke-width: 1.7;
+}
+
+.linkai-wallet-orders-copy h3 {
+  margin: 2px 0 8px;
+  color: #f5f5f5;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.linkai-wallet-orders-copy p {
+  margin: 0;
+  color: #777;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.linkai-wallet-orders-content > [data-slot='button'] {
+  width: 100%;
+  height: 46px;
+  justify-content: space-between;
+  padding-inline: 16px;
+  border-color: #282828;
+  background: #111;
+}
+
+.linkai-wallet-rewards-card {
+  min-height: 216px;
+}
+
+.linkai-console-wallet
+  .linkai-wallet-rewards-card
+  > [data-slot='card-content'] {
+  display: grid;
+  min-height: 216px;
+  grid-template-columns: 1fr !important;
+  align-content: start;
+  gap: 22px;
+  padding: 28px !important;
+}
+
+.linkai-console-wallet .linkai-wallet-rewards-card h3 {
+  color: #f5f5f5;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.linkai-console-wallet .linkai-wallet-rewards-card p {
+  white-space: normal;
+}
+
+.linkai-console-wallet .linkai-wallet-rewards-card [data-slot='input'] {
+  min-height: 40px;
+}
+
+.linkai-wallet-subscription-section {
+  min-width: 0;
+}
+
+.linkai-console-wallet [data-slot='separator'] {
+  background: #202020;
+}
+
+@media (max-width: 1260px) {
+  .linkai-wallet-page-content {
+    width: calc(100% - 40px);
+    padding-top: 40px;
+  }
+
+  .linkai-wallet-main-grid {
+    grid-template-columns: minmax(0, 1.65fr) minmax(330px, 1fr);
+    gap: 20px;
+  }
+
+  .linkai-console-wallet .linkai-wallet-stat-card {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 16px;
+    padding: 22px;
+  }
+
+  .linkai-wallet-stat-icon {
+    width: 52px;
+    height: 52px;
+  }
+
+  .linkai-wallet-stat-value {
+    grid-column: 2;
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 980px) {
+  .linkai-console-wallet .linkai-wallet-stats-grid,
+  .linkai-wallet-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .linkai-console-wallet .linkai-wallet-stat-card {
+    grid-template-columns: 63px minmax(0, 1fr) auto;
+  }
+
+  .linkai-wallet-stat-icon {
+    width: 63px;
+    height: 63px;
+  }
+
+  .linkai-wallet-stat-value {
+    grid-column: auto;
+  }
+
+  .linkai-wallet-side-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .linkai-wallet-page-content {
+    width: calc(100% - 28px);
+    padding: 26px 0 44px;
+  }
+
+  .linkai-wallet-heading {
+    margin: 26px 0 22px;
+    font-size: 26px;
+  }
+
+  .linkai-wallet-body {
+    gap: 26px;
+  }
+
+  .linkai-console-wallet .linkai-wallet-stat-card {
+    min-height: 112px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 14px;
+    padding: 19px;
+  }
+
+  .linkai-wallet-stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .linkai-wallet-stat-label {
+    font-size: 16px;
+  }
+
+  .linkai-wallet-stat-value {
+    grid-column: 2;
+    font-size: 25px;
+  }
+
+  .linkai-wallet-recharge-section > h2,
+  .linkai-wallet-orders-section > h2 {
+    margin-bottom: 16px;
+    font-size: 25px;
+  }
+
+  .linkai-wallet-side-column,
+  .linkai-console-wallet .linkai-wallet-preset-grid,
+  .linkai-console-wallet .linkai-wallet-payment-grid,
+  .linkai-console-wallet .linkai-wallet-custom-amount {
+    grid-template-columns: 1fr;
+  }
+
+  .linkai-wallet-recharge-header,
+  .linkai-wallet-recharge-content,
+  .linkai-wallet-orders-content,
+  .linkai-console-wallet
+    .linkai-wallet-rewards-card
+    > [data-slot='card-content'] {
+    padding: 20px !important;
+  }
+
+  .linkai-console-wallet .linkai-wallet-preset {
+    min-height: 102px;
+  }
+}

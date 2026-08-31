@@ -22,7 +22,7 @@ import { GroupStatusCard } from './group-status-card'
 
 export function GroupStatusList(props: { groups: GroupStatusEntry[] }) {
   return (
-    <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-3'>
+    <div className='linkai-group-status-grid grid grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))] gap-3'>
       {props.groups.map((group) => (
         <GroupStatusCard key={group.group} group={group} />
       ))}

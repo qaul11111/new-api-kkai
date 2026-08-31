@@ -85,7 +85,7 @@ export function GroupStatusCard(props: { group: GroupStatusEntry }) {
     <Card
       size='sm'
       className={cn(
-        'h-full min-h-[22rem] gap-0 rounded-lg border bg-card/80 py-0 shadow-sm transition-[background-color,border-color] hover:bg-card',
+        'linkai-group-status-card h-full min-h-[22rem] gap-0 rounded-lg border bg-card/80 py-0 shadow-sm transition-[background-color,border-color] hover:bg-card',
         tone.card
       )}
     >
@@ -182,7 +182,7 @@ function MetricPanel(props: {
 }) {
   const Icon = props.icon
   return (
-    <div className='bg-muted/10 min-w-0 rounded-lg border px-3 py-3'>
+    <div className='linkai-group-status-metric bg-muted/10 min-w-0 rounded-lg border px-3 py-3'>
       <dt className='text-muted-foreground flex items-center gap-1 text-xs'>
         {Icon && <Icon className='size-3' aria-hidden='true' />}
         {props.label}

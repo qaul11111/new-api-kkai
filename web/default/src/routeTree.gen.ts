@@ -16,6 +16,7 @@ import { Route as CnRestrictedRouteImport } from './routes/cn-restricted'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as UserAgreementRouteImport } from './routes/user-agreement'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
+import { Route as authLoginRouteImport } from './routes/(auth)/login'
 import { Route as authOauthRouteImport } from './routes/(auth)/oauth'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authRegisterRouteImport } from './routes/(auth)/register'
@@ -27,13 +28,20 @@ import { Route as errors403RouteImport } from './routes/(errors)/403'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
+import { Route as errorsForbiddenRouteImport } from './routes/(errors)/forbidden'
 import { Route as AuthenticatedChat2linkRouteImport } from './routes/_authenticated/chat2link'
 import { Route as AuthenticatedImageStudioRouteRouteImport } from './routes/_authenticated/image-studio/route'
 import { Route as AuthenticatedInvitationsRouteImport } from './routes/_authenticated/invitations'
 import { Route as AuthenticatedSystemSettingsRouteRouteImport } from './routes/_authenticated/system-settings/route'
 import { Route as AuthenticatedVideoStudioRouteRouteImport } from './routes/_authenticated/video-studio/route'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
+import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as ConsoleLogRouteImport } from './routes/console/log'
+import { Route as ConsoleMidjourneyRouteImport } from './routes/console/midjourney'
+import { Route as ConsolePersonalRouteImport } from './routes/console/personal'
+import { Route as ConsolePlaygroundRouteImport } from './routes/console/playground'
+import { Route as ConsoleTaskRouteImport } from './routes/console/task'
+import { Route as ConsoleTokenRouteImport } from './routes/console/token'
 import { Route as ConsoleTopupRouteImport } from './routes/console/topup'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
@@ -71,6 +79,8 @@ import { Route as AuthenticatedVideoStudioCreateRouteImport } from './routes/_au
 import { Route as AuthenticatedVideoStudioLibraryRouteImport } from './routes/_authenticated/video-studio/library'
 import { Route as AuthenticatedVideoStudioTasksRouteImport } from './routes/_authenticated/video-studio/tasks'
 import { Route as AuthenticatedWalletIndexRouteImport } from './routes/_authenticated/wallet/index'
+import { Route as ConsoleChatIndexRouteImport } from './routes/console/chat/index'
+import { Route as ConsoleChatIdRouteImport } from './routes/console/chat/$id'
 import { Route as PricingModelIdIndexRouteImport } from './routes/pricing/$modelId/index'
 import { Route as RankingsCategoryIdIndexRouteImport } from './routes/rankings/$categoryId/index'
 import { Route as AuthenticatedSystemSettingsAuthIndexRouteImport } from './routes/_authenticated/system-settings/auth/index'
@@ -119,6 +129,11 @@ const UserAgreementRoute = UserAgreementRouteImport.update({
 const authForgotPasswordRoute = authForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => authRouteRoute,
+} as any)
+const authLoginRoute = authLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => authRouteRoute,
 } as any)
 const authOauthRoute = authOauthRouteImport.update({
@@ -176,6 +191,11 @@ const errors503Route = errors503RouteImport.update({
   path: '/503',
   getParentRoute: () => rootRouteImport,
 } as any)
+const errorsForbiddenRoute = errorsForbiddenRouteImport.update({
+  id: '/(errors)/forbidden',
+  path: '/forbidden',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedChat2linkRoute = AuthenticatedChat2linkRouteImport.update({
   id: '/chat2link',
   path: '/chat2link',
@@ -210,9 +230,39 @@ const AboutIndexRoute = AboutIndexRouteImport.update({
   path: '/about/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleIndexRoute = ConsoleIndexRouteImport.update({
+  id: '/console/',
+  path: '/console/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleLogRoute = ConsoleLogRouteImport.update({
   id: '/console/log',
   path: '/console/log',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleMidjourneyRoute = ConsoleMidjourneyRouteImport.update({
+  id: '/console/midjourney',
+  path: '/console/midjourney',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsolePersonalRoute = ConsolePersonalRouteImport.update({
+  id: '/console/personal',
+  path: '/console/personal',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsolePlaygroundRoute = ConsolePlaygroundRouteImport.update({
+  id: '/console/playground',
+  path: '/console/playground',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleTaskRoute = ConsoleTaskRouteImport.update({
+  id: '/console/task',
+  path: '/console/task',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleTokenRoute = ConsoleTokenRouteImport.update({
+  id: '/console/token',
+  path: '/console/token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleTopupRoute = ConsoleTopupRouteImport.update({
@@ -427,6 +477,16 @@ const AuthenticatedWalletIndexRoute =
     path: '/wallet/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ConsoleChatIndexRoute = ConsoleChatIndexRouteImport.update({
+  id: '/console/chat/',
+  path: '/console/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleChatIdRoute = ConsoleChatIdRouteImport.update({
+  id: '/console/chat/$id',
+  path: '/console/chat/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingModelIdIndexRoute = PricingModelIdIndexRouteImport.update({
   id: '/pricing/$modelId/',
   path: '/pricing/$modelId/',
@@ -531,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/system-settings': typeof AuthenticatedSystemSettingsRouteRouteWithChildren
   '/video-studio': typeof AuthenticatedVideoStudioRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
   '/oauth': typeof authOauthRoute
   '/otp': typeof authOtpRoute
   '/register': typeof authRegisterRoute
@@ -542,12 +603,19 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/forbidden': typeof errorsForbiddenRoute
   '/chat2link': typeof AuthenticatedChat2linkRoute
   '/invitations': typeof AuthenticatedInvitationsRouteWithChildren
   '/console/log': typeof ConsoleLogRoute
+  '/console/midjourney': typeof ConsoleMidjourneyRoute
+  '/console/personal': typeof ConsolePersonalRoute
+  '/console/playground': typeof ConsolePlaygroundRoute
+  '/console/task': typeof ConsoleTaskRoute
+  '/console/token': typeof ConsoleTokenRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
+  '/console/': typeof ConsoleIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
@@ -566,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/video-studio/create': typeof AuthenticatedVideoStudioCreateRoute
   '/video-studio/library': typeof AuthenticatedVideoStudioLibraryRoute
   '/video-studio/tasks': typeof AuthenticatedVideoStudioTasksRoute
+  '/console/chat/$id': typeof ConsoleChatIdRoute
   '/channels/': typeof AuthenticatedChannelsIndexRoute
   '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/group-status/': typeof AuthenticatedGroupStatusIndexRoute
@@ -583,6 +652,7 @@ export interface FileRoutesByFullPath {
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/video-studio/': typeof AuthenticatedVideoStudioIndexRoute
   '/wallet/': typeof AuthenticatedWalletIndexRoute
+  '/console/chat/': typeof ConsoleChatIndexRoute
   '/pricing/$modelId/': typeof PricingModelIdIndexRoute
   '/rankings/$categoryId/': typeof RankingsCategoryIdIndexRoute
   '/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
@@ -606,6 +676,7 @@ export interface FileRoutesByTo {
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/user-agreement': typeof UserAgreementRoute
   '/forgot-password': typeof authForgotPasswordRoute
+  '/login': typeof authLoginRoute
   '/oauth': typeof authOauthRoute
   '/otp': typeof authOtpRoute
   '/register': typeof authRegisterRoute
@@ -617,11 +688,18 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/forbidden': typeof errorsForbiddenRoute
   '/chat2link': typeof AuthenticatedChat2linkRoute
   '/console/log': typeof ConsoleLogRoute
+  '/console/midjourney': typeof ConsoleMidjourneyRoute
+  '/console/personal': typeof ConsolePersonalRoute
+  '/console/playground': typeof ConsolePlaygroundRoute
+  '/console/task': typeof ConsoleTaskRoute
+  '/console/token': typeof ConsoleTokenRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about': typeof AboutIndexRoute
+  '/console': typeof ConsoleIndexRoute
   '/docs': typeof DocsIndexRoute
   '/pricing': typeof PricingIndexRoute
   '/rankings': typeof RankingsIndexRoute
@@ -640,6 +718,7 @@ export interface FileRoutesByTo {
   '/video-studio/create': typeof AuthenticatedVideoStudioCreateRoute
   '/video-studio/library': typeof AuthenticatedVideoStudioLibraryRoute
   '/video-studio/tasks': typeof AuthenticatedVideoStudioTasksRoute
+  '/console/chat/$id': typeof ConsoleChatIdRoute
   '/channels': typeof AuthenticatedChannelsIndexRoute
   '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/group-status': typeof AuthenticatedGroupStatusIndexRoute
@@ -657,6 +736,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersIndexRoute
   '/video-studio': typeof AuthenticatedVideoStudioIndexRoute
   '/wallet': typeof AuthenticatedWalletIndexRoute
+  '/console/chat': typeof ConsoleChatIndexRoute
   '/pricing/$modelId': typeof PricingModelIdIndexRoute
   '/rankings/$categoryId': typeof RankingsCategoryIdIndexRoute
   '/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
@@ -686,6 +766,7 @@ export interface FileRoutesById {
   '/_authenticated/system-settings': typeof AuthenticatedSystemSettingsRouteRouteWithChildren
   '/_authenticated/video-studio': typeof AuthenticatedVideoStudioRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
+  '/(auth)/login': typeof authLoginRoute
   '/(auth)/oauth': typeof authOauthRoute
   '/(auth)/otp': typeof authOtpRoute
   '/(auth)/register': typeof authRegisterRoute
@@ -697,12 +778,19 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/(errors)/forbidden': typeof errorsForbiddenRoute
   '/_authenticated/chat2link': typeof AuthenticatedChat2linkRoute
   '/_authenticated/invitations': typeof AuthenticatedInvitationsRouteWithChildren
   '/console/log': typeof ConsoleLogRoute
+  '/console/midjourney': typeof ConsoleMidjourneyRoute
+  '/console/personal': typeof ConsolePersonalRoute
+  '/console/playground': typeof ConsolePlaygroundRoute
+  '/console/task': typeof ConsoleTaskRoute
+  '/console/token': typeof ConsoleTokenRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
+  '/console/': typeof ConsoleIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/pricing/': typeof PricingIndexRoute
   '/rankings/': typeof RankingsIndexRoute
@@ -721,6 +809,7 @@ export interface FileRoutesById {
   '/_authenticated/video-studio/create': typeof AuthenticatedVideoStudioCreateRoute
   '/_authenticated/video-studio/library': typeof AuthenticatedVideoStudioLibraryRoute
   '/_authenticated/video-studio/tasks': typeof AuthenticatedVideoStudioTasksRoute
+  '/console/chat/$id': typeof ConsoleChatIdRoute
   '/_authenticated/channels/': typeof AuthenticatedChannelsIndexRoute
   '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/group-status/': typeof AuthenticatedGroupStatusIndexRoute
@@ -738,6 +827,7 @@ export interface FileRoutesById {
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/video-studio/': typeof AuthenticatedVideoStudioIndexRoute
   '/_authenticated/wallet/': typeof AuthenticatedWalletIndexRoute
+  '/console/chat/': typeof ConsoleChatIndexRoute
   '/pricing/$modelId/': typeof PricingModelIdIndexRoute
   '/rankings/$categoryId/': typeof RankingsCategoryIdIndexRoute
   '/_authenticated/system-settings/auth/$section': typeof AuthenticatedSystemSettingsAuthSectionRoute
@@ -766,6 +856,7 @@ export interface FileRouteTypes {
     | '/system-settings'
     | '/video-studio'
     | '/forgot-password'
+    | '/login'
     | '/oauth'
     | '/otp'
     | '/register'
@@ -777,12 +868,19 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/forbidden'
     | '/chat2link'
     | '/invitations'
     | '/console/log'
+    | '/console/midjourney'
+    | '/console/personal'
+    | '/console/playground'
+    | '/console/task'
+    | '/console/token'
     | '/console/topup'
     | '/oauth/$provider'
     | '/about/'
+    | '/console/'
     | '/docs/'
     | '/pricing/'
     | '/rankings/'
@@ -801,6 +899,7 @@ export interface FileRouteTypes {
     | '/video-studio/create'
     | '/video-studio/library'
     | '/video-studio/tasks'
+    | '/console/chat/$id'
     | '/channels/'
     | '/dashboard/'
     | '/group-status/'
@@ -818,6 +917,7 @@ export interface FileRouteTypes {
     | '/users/'
     | '/video-studio/'
     | '/wallet/'
+    | '/console/chat/'
     | '/pricing/$modelId/'
     | '/rankings/$categoryId/'
     | '/system-settings/auth/$section'
@@ -841,6 +941,7 @@ export interface FileRouteTypes {
     | '/privacy-policy'
     | '/user-agreement'
     | '/forgot-password'
+    | '/login'
     | '/oauth'
     | '/otp'
     | '/register'
@@ -852,11 +953,18 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/forbidden'
     | '/chat2link'
     | '/console/log'
+    | '/console/midjourney'
+    | '/console/personal'
+    | '/console/playground'
+    | '/console/task'
+    | '/console/token'
     | '/console/topup'
     | '/oauth/$provider'
     | '/about'
+    | '/console'
     | '/docs'
     | '/pricing'
     | '/rankings'
@@ -875,6 +983,7 @@ export interface FileRouteTypes {
     | '/video-studio/create'
     | '/video-studio/library'
     | '/video-studio/tasks'
+    | '/console/chat/$id'
     | '/channels'
     | '/dashboard'
     | '/group-status'
@@ -892,6 +1001,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/video-studio'
     | '/wallet'
+    | '/console/chat'
     | '/pricing/$modelId'
     | '/rankings/$categoryId'
     | '/system-settings/auth/$section'
@@ -920,6 +1030,7 @@ export interface FileRouteTypes {
     | '/_authenticated/system-settings'
     | '/_authenticated/video-studio'
     | '/(auth)/forgot-password'
+    | '/(auth)/login'
     | '/(auth)/oauth'
     | '/(auth)/otp'
     | '/(auth)/register'
@@ -931,12 +1042,19 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/(errors)/forbidden'
     | '/_authenticated/chat2link'
     | '/_authenticated/invitations'
     | '/console/log'
+    | '/console/midjourney'
+    | '/console/personal'
+    | '/console/playground'
+    | '/console/task'
+    | '/console/token'
     | '/console/topup'
     | '/oauth/$provider'
     | '/about/'
+    | '/console/'
     | '/docs/'
     | '/pricing/'
     | '/rankings/'
@@ -955,6 +1073,7 @@ export interface FileRouteTypes {
     | '/_authenticated/video-studio/create'
     | '/_authenticated/video-studio/library'
     | '/_authenticated/video-studio/tasks'
+    | '/console/chat/$id'
     | '/_authenticated/channels/'
     | '/_authenticated/dashboard/'
     | '/_authenticated/group-status/'
@@ -972,6 +1091,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users/'
     | '/_authenticated/video-studio/'
     | '/_authenticated/wallet/'
+    | '/console/chat/'
     | '/pricing/$modelId/'
     | '/rankings/$categoryId/'
     | '/_authenticated/system-settings/auth/$section'
@@ -1002,14 +1122,23 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  errorsForbiddenRoute: typeof errorsForbiddenRoute
   ConsoleLogRoute: typeof ConsoleLogRoute
+  ConsoleMidjourneyRoute: typeof ConsoleMidjourneyRoute
+  ConsolePersonalRoute: typeof ConsolePersonalRoute
+  ConsolePlaygroundRoute: typeof ConsolePlaygroundRoute
+  ConsoleTaskRoute: typeof ConsoleTaskRoute
+  ConsoleTokenRoute: typeof ConsoleTokenRoute
   ConsoleTopupRoute: typeof ConsoleTopupRoute
   OauthProviderRoute: typeof OauthProviderRoute
   AboutIndexRoute: typeof AboutIndexRoute
+  ConsoleIndexRoute: typeof ConsoleIndexRoute
   DocsIndexRoute: typeof DocsIndexRoute
   PricingIndexRoute: typeof PricingIndexRoute
   RankingsIndexRoute: typeof RankingsIndexRoute
   SetupIndexRoute: typeof SetupIndexRoute
+  ConsoleChatIdRoute: typeof ConsoleChatIdRoute
+  ConsoleChatIndexRoute: typeof ConsoleChatIndexRoute
   PricingModelIdIndexRoute: typeof PricingModelIdIndexRoute
   RankingsCategoryIdIndexRoute: typeof RankingsCategoryIdIndexRoute
 }
@@ -1063,6 +1192,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof authForgotPasswordRouteImport
+      parentRoute: typeof authRouteRoute
+    }
+    '/(auth)/login': {
+      id: '/(auth)/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof authLoginRouteImport
       parentRoute: typeof authRouteRoute
     }
     '/(auth)/oauth': {
@@ -1142,6 +1278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof errors503RouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(errors)/forbidden': {
+      id: '/(errors)/forbidden'
+      path: '/forbidden'
+      fullPath: '/forbidden'
+      preLoaderRoute: typeof errorsForbiddenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/chat2link': {
       id: '/_authenticated/chat2link'
       path: '/chat2link'
@@ -1184,11 +1327,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/console/': {
+      id: '/console/'
+      path: '/console'
+      fullPath: '/console/'
+      preLoaderRoute: typeof ConsoleIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/console/log': {
       id: '/console/log'
       path: '/console/log'
       fullPath: '/console/log'
       preLoaderRoute: typeof ConsoleLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/midjourney': {
+      id: '/console/midjourney'
+      path: '/console/midjourney'
+      fullPath: '/console/midjourney'
+      preLoaderRoute: typeof ConsoleMidjourneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/personal': {
+      id: '/console/personal'
+      path: '/console/personal'
+      fullPath: '/console/personal'
+      preLoaderRoute: typeof ConsolePersonalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/playground': {
+      id: '/console/playground'
+      path: '/console/playground'
+      fullPath: '/console/playground'
+      preLoaderRoute: typeof ConsolePlaygroundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/task': {
+      id: '/console/task'
+      path: '/console/task'
+      fullPath: '/console/task'
+      preLoaderRoute: typeof ConsoleTaskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/token': {
+      id: '/console/token'
+      path: '/console/token'
+      fullPath: '/console/token'
+      preLoaderRoute: typeof ConsoleTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console/topup': {
@@ -1450,6 +1635,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/console/chat/': {
+      id: '/console/chat/'
+      path: '/console/chat'
+      fullPath: '/console/chat/'
+      preLoaderRoute: typeof ConsoleChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/console/chat/$id': {
+      id: '/console/chat/$id'
+      path: '/console/chat/$id'
+      fullPath: '/console/chat/$id'
+      preLoaderRoute: typeof ConsoleChatIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing/$modelId/': {
       id: '/pricing/$modelId/'
       path: '/pricing/$modelId'
@@ -1567,6 +1766,7 @@ declare module '@tanstack/react-router' {
 
 interface authRouteRouteChildren {
   authForgotPasswordRoute: typeof authForgotPasswordRoute
+  authLoginRoute: typeof authLoginRoute
   authOauthRoute: typeof authOauthRoute
   authOtpRoute: typeof authOtpRoute
   authRegisterRoute: typeof authRegisterRoute
@@ -1578,6 +1778,7 @@ interface authRouteRouteChildren {
 
 const authRouteRouteChildren: authRouteRouteChildren = {
   authForgotPasswordRoute: authForgotPasswordRoute,
+  authLoginRoute: authLoginRoute,
   authOauthRoute: authOauthRoute,
   authOtpRoute: authOtpRoute,
   authRegisterRoute: authRegisterRoute,
@@ -1779,14 +1980,23 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  errorsForbiddenRoute: errorsForbiddenRoute,
   ConsoleLogRoute: ConsoleLogRoute,
+  ConsoleMidjourneyRoute: ConsoleMidjourneyRoute,
+  ConsolePersonalRoute: ConsolePersonalRoute,
+  ConsolePlaygroundRoute: ConsolePlaygroundRoute,
+  ConsoleTaskRoute: ConsoleTaskRoute,
+  ConsoleTokenRoute: ConsoleTokenRoute,
   ConsoleTopupRoute: ConsoleTopupRoute,
   OauthProviderRoute: OauthProviderRoute,
   AboutIndexRoute: AboutIndexRoute,
+  ConsoleIndexRoute: ConsoleIndexRoute,
   DocsIndexRoute: DocsIndexRoute,
   PricingIndexRoute: PricingIndexRoute,
   RankingsIndexRoute: RankingsIndexRoute,
   SetupIndexRoute: SetupIndexRoute,
+  ConsoleChatIdRoute: ConsoleChatIdRoute,
+  ConsoleChatIndexRoute: ConsoleChatIndexRoute,
   PricingModelIdIndexRoute: PricingModelIdIndexRoute,
   RankingsCategoryIdIndexRoute: RankingsCategoryIdIndexRoute,
 }

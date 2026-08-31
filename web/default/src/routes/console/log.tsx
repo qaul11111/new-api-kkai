@@ -18,8 +18,17 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
+import { legacyCompatSearchSchema } from '../-legacy-search'
+
+// Legacy `/console/log` entry point (common usage logs).
 export const Route = createFileRoute('/console/log')({
-  beforeLoad: () => {
-    throw redirect({ to: '/usage-logs' })
+  validateSearch: legacyCompatSearchSchema,
+  beforeLoad: ({ search }) => {
+    throw redirect({
+      to: '/usage-logs/$section',
+      params: { section: 'common' },
+      search: { ...search },
+      replace: true,
+    })
   },
 })

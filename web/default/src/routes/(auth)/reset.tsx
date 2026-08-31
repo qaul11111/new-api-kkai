@@ -16,20 +16,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute, useSearch } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import z from 'zod'
 
-import {
-  ResetPasswordConfirm,
-  type ResetPasswordSearchParams,
-} from '@/features/auth/reset-password-confirm'
+import { ResetPasswordConfirm } from '@/features/auth/reset-password-confirm'
+
+const resetSearchSchema = z.object({
+  email: z.string().optional().catch(undefined),
+  token: z.string().optional().catch(undefined),
+})
 
 export const Route = createFileRoute('/(auth)/reset')({
+  validateSearch: resetSearchSchema,
+  beforeLoad: ({ search }) => {
+    // Legacy `/reset` doubles as the "start password recovery" entry point:
+    // only a complete email+token pair renders the confirmation form.
+    if (!search.email || !search.token) {
+      throw redirect({ to: '/forgot-password', replace: true })
+    }
+  },
   component: ResetPassword,
 })
 
 function ResetPassword() {
-  const search = useSearch({
-    from: '/(auth)/reset',
-  }) as ResetPasswordSearchParams
-  return <ResetPasswordConfirm email={search?.email} token={search?.token} />
+  const { email, token } = Route.useSearch()
+  return <ResetPasswordConfirm email={email} token={token} />
 }

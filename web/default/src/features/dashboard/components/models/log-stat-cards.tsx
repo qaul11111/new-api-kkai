@@ -143,7 +143,7 @@ export function LogStatCards(props: LogStatCardsProps) {
   })
 
   return (
-    <div className='overflow-hidden rounded-lg border'>
+    <div className='linkai-analytics-stat-card overflow-hidden rounded-lg border'>
       <div className='divide-border/60 grid min-w-0 grid-cols-2 divide-x sm:grid-cols-3 lg:grid-cols-5'>
         {items.map((it, idx) => {
           const Icon = it.icon
@@ -186,7 +186,7 @@ export function LogStatCards(props: LogStatCardsProps) {
             <div
               key={it.title}
               className={cn(
-                'min-w-0 px-2.5 py-1.5 sm:px-5 sm:py-4',
+                'linkai-analytics-stat-item min-w-0 px-2.5 py-1.5 sm:px-5 sm:py-4',
                 idx === items.length - 1 &&
                   items.length % 2 !== 0 &&
                   'col-span-2 sm:col-span-1'

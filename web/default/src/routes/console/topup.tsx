@@ -17,16 +17,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
-const topupSearchSchema = z.record(z.string(), z.unknown()).catch({})
+import { legacyCompatSearchSchema } from '../-legacy-search'
 
+// Legacy `/console/topup` entry point. Keep the whole query string (payment
+// return params) and land on the wallet history view.
 export const Route = createFileRoute('/console/topup')({
-  validateSearch: topupSearchSchema,
+  validateSearch: legacyCompatSearchSchema,
   beforeLoad: ({ search }) => {
     throw redirect({
       to: '/wallet',
       search: { show_history: true, ...search },
+      replace: true,
     })
   },
 })

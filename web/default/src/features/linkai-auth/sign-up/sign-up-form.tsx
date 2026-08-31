@@ -31,6 +31,9 @@ import {
 import { LinkAiLegalConsent } from '../components/legal-consent'
 import type { LinkAiSignUpState } from './use-linkai-sign-up'
 
+const INPUT_CLASS =
+  'h-[46px] w-full rounded-full border border-[#2a2a2a] bg-[#1a1a1a] px-6 text-base text-white transition outline-none placeholder:text-[#9b9b9b] focus:border-[#7258ce] focus:ring-2 focus:ring-[#7258ce]/20'
+
 type LinkAiSignUpFormProps = {
   state: LinkAiSignUpState
 }
@@ -46,7 +49,6 @@ export function LinkAiSignUpForm({ state }: LinkAiSignUpFormProps) {
     handleSendVerificationCode,
     isLoading,
     onSubmit,
-    passwordRegistrationEnabled,
     requiresLegalConsent,
     setAgreedToLegal,
     setVerificationCode,
@@ -55,37 +57,27 @@ export function LinkAiSignUpForm({ state }: LinkAiSignUpFormProps) {
     turnstileWidgetKey,
     verificationCode,
   } = state
-  const registrationEnabled =
-    passwordRegistrationEnabled && status?.register_enabled !== false
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
         <FormField
           control={form.control}
-          name='email'
-          rules={{
-            required: t('Please enter your email'),
-            pattern: {
-              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-              message: t('Please enter a valid email address'),
-            },
-          }}
+          name='username'
           render={({ field }) => (
             <FormItem className='gap-[6px]'>
               <label
                 className='text-base leading-5 text-white'
-                htmlFor='linkai-register-email'
+                htmlFor='linkai-register-username'
               >
-                {t('Enter email address')}
+                {t('Username')}
               </label>
               <FormControl>
                 <input
-                  id='linkai-register-email'
-                  type='email'
-                  autoComplete='email'
-                  placeholder={t('Enter email address')}
-                  className='h-[46px] w-full rounded-full border border-[#2a2a2a] bg-[#1a1a1a] px-6 text-base text-white transition outline-none placeholder:text-[#9b9b9b] focus:border-[#7258ce] focus:ring-2 focus:ring-[#7258ce]/20'
+                  id='linkai-register-username'
+                  autoComplete='username'
+                  placeholder={t('Enter your username')}
+                  className={INPUT_CLASS}
                   {...field}
                 />
               </FormControl>
@@ -97,24 +89,13 @@ export function LinkAiSignUpForm({ state }: LinkAiSignUpFormProps) {
         <FormField
           control={form.control}
           name='password'
-          rules={{
-            required: t('Please enter your password'),
-            minLength: {
-              value: 8,
-              message: t('Password must be between 8 and 20 characters'),
-            },
-            maxLength: {
-              value: 20,
-              message: t('Password must be at most 20 characters long'),
-            },
-          }}
           render={({ field }) => (
             <FormItem className='gap-[6px]'>
               <label
-                className='text-base leading-5 text-white'
+                className='block text-base leading-5 text-white'
                 htmlFor='linkai-register-password'
               >
-                {t('Enter login password')}
+                {t('Password')}
               </label>
               <FormControl>
                 <input
@@ -122,7 +103,33 @@ export function LinkAiSignUpForm({ state }: LinkAiSignUpFormProps) {
                   type='password'
                   autoComplete='new-password'
                   placeholder={t('Enter password (8-20 characters)')}
-                  className='h-[46px] w-full rounded-full border border-[#2a2a2a] bg-[#1a1a1a] px-6 text-base text-white transition outline-none placeholder:text-[#9b9b9b] focus:border-[#7258ce] focus:ring-2 focus:ring-[#7258ce]/20'
+                  className={INPUT_CLASS}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name='confirmPassword'
+          render={({ field }) => (
+            <FormItem className='gap-[6px]'>
+              <label
+                className='block text-base leading-5 text-white'
+                htmlFor='linkai-register-confirm-password'
+              >
+                {t('Confirm password')}
+              </label>
+              <FormControl>
+                <input
+                  id='linkai-register-confirm-password'
+                  type='password'
+                  autoComplete='new-password'
+                  placeholder={t('Confirm password')}
+                  className={INPUT_CLASS}
                   {...field}
                 />
               </FormControl>
@@ -132,30 +139,59 @@ export function LinkAiSignUpForm({ state }: LinkAiSignUpFormProps) {
         />
 
         {emailVerificationRequired && (
-          <div className='flex gap-2'>
-            <input
-              value={verificationCode}
-              onChange={(event) => setVerificationCode(event.target.value)}
-              placeholder={t('Verification code')}
-              className='h-[46px] min-w-0 flex-1 rounded-full border border-[#2a2a2a] bg-[#1a1a1a] px-6 text-sm text-white outline-none focus:border-[#7258ce]'
+          <>
+            <FormField
+              control={form.control}
+              name='email'
+              render={({ field }) => (
+                <FormItem className='gap-[6px]'>
+                  <label
+                    className='text-base leading-5 text-white'
+                    htmlFor='linkai-register-email'
+                  >
+                    {t('Enter email address')}
+                  </label>
+                  <FormControl>
+                    <input
+                      id='linkai-register-email'
+                      type='email'
+                      autoComplete='email'
+                      placeholder={t('Enter email address')}
+                      className={INPUT_CLASS}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <button
-              type='button'
-              disabled={
-                emailVerification.isSending ||
-                emailVerification.isActive ||
-                !email
-              }
-              onClick={() => void handleSendVerificationCode()}
-              className='rounded-full border border-[#37373d] px-5 text-sm text-white disabled:opacity-50'
-            >
-              {emailVerification.isActive
-                ? t('Resend ({{seconds}}s)', {
-                    seconds: emailVerification.secondsLeft,
-                  })
-                : t('Send code')}
-            </button>
-          </div>
+
+            <div className='flex gap-2'>
+              <input
+                value={verificationCode}
+                onChange={(event) => setVerificationCode(event.target.value)}
+                placeholder={t('Verification code')}
+                aria-label={t('Verification code')}
+                className='h-[46px] min-w-0 flex-1 rounded-full border border-[#2a2a2a] bg-[#1a1a1a] px-6 text-sm text-white outline-none focus:border-[#7258ce]'
+              />
+              <button
+                type='button'
+                disabled={
+                  emailVerification.isSending ||
+                  emailVerification.isActive ||
+                  !email
+                }
+                onClick={() => void handleSendVerificationCode()}
+                className='rounded-full border border-[#37373d] px-5 text-sm text-white disabled:opacity-50'
+              >
+                {emailVerification.isActive
+                  ? t('Resend ({{seconds}}s)', {
+                      seconds: emailVerification.secondsLeft,
+                    })
+                  : t('Send code')}
+              </button>
+            </div>
+          </>
         )}
 
         {turnstile.isTurnstileEnabled && (
@@ -178,15 +214,11 @@ export function LinkAiSignUpForm({ state }: LinkAiSignUpFormProps) {
 
         <button
           type='submit'
-          disabled={
-            isLoading ||
-            !registrationEnabled ||
-            (requiresLegalConsent && !agreedToLegal)
-          }
+          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
           className='flex h-[46px] w-full items-center justify-center gap-2 rounded-full bg-[#e5e5e5] text-base font-bold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50'
         >
           {isLoading && <Loader2 className='h-4 w-4 animate-spin' />}
-          {t('Register with email')}
+          {t('Create account')}
         </button>
       </form>
     </Form>

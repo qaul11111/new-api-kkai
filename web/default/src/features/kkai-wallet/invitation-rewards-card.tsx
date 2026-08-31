@@ -32,12 +32,16 @@ import { formatRebateAmount } from '@/features/invitations/format'
 import { useInvitationFeatureStatus } from '@/features/invitations/hooks/use-invitation-feature-status'
 import { AffiliateRewardsCard } from '@/features/wallet/components/affiliate-rewards-card'
 import { generateAffiliateLink } from '@/features/wallet/lib'
+import { cn } from '@/lib/utils'
 
 import { isInvitationWalletLoading } from './loading-state'
 
 type WalletRewardsProps = ComponentProps<typeof AffiliateRewardsCard>
 
-export const KkaiWalletRewardsCard = (props: WalletRewardsProps) => {
+export const KkaiWalletRewardsCard = ({
+  variant = 'default',
+  ...props
+}: WalletRewardsProps) => {
   const { t } = useTranslation()
   const feature = useInvitationFeatureStatus()
   const statsQuery = useQuery({
@@ -62,9 +66,11 @@ export const KkaiWalletRewardsCard = (props: WalletRewardsProps) => {
       statsQuery.isPending
     )
   ) {
-    return <AffiliateRewardsCard {...props} loading />
+    return <AffiliateRewardsCard {...props} variant={variant} loading />
   }
-  if (!stats?.invitationCode) return <AffiliateRewardsCard {...props} />
+  if (!stats?.invitationCode) {
+    return <AffiliateRewardsCard {...props} variant={variant} />
+  }
 
   const invitationLink = generateAffiliateLink(stats.invitationCode)
   const statItems = [
@@ -74,12 +80,24 @@ export const KkaiWalletRewardsCard = (props: WalletRewardsProps) => {
   ]
 
   return (
-    <Card data-card-hover='false' className='bg-muted/20 py-0'>
+    <Card
+      data-card-hover='false'
+      className={cn(
+        'bg-muted/20 py-0',
+        variant === 'linkai' && 'linkai-wallet-rewards-card'
+      )}
+    >
       <CardContent className='grid gap-3 p-3 sm:p-4 lg:grid-cols-[minmax(200px,1fr)_minmax(180px,0.65fr)_minmax(360px,1.2fr)] lg:items-center'>
         <div className='flex min-w-0 items-center gap-2.5'>
-          <IconBadge tone='chart-3'>
-            <Gift aria-hidden='true' />
-          </IconBadge>
+          {variant === 'linkai' ? (
+            <span className='linkai-wallet-gift-icon' aria-hidden='true'>
+              <Gift aria-hidden='true' />
+            </span>
+          ) : (
+            <IconBadge tone='chart-3'>
+              <Gift aria-hidden='true' />
+            </IconBadge>
+          )}
           <div className='min-w-0'>
             <h3 className='truncate text-sm font-semibold'>
               {t('Invitation Rebate')}

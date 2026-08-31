@@ -72,6 +72,9 @@ export function useStatus() {
     staleTime: 5 * 60 * 1000,
     // Cache expires after 30 minutes
     gcTime: 30 * 60 * 1000,
+    // Status is a background read with a persisted fallback. Retrying a
+    // rate-limited endpoint only adds load and duplicate error noise.
+    retry: false,
   })
 
   return {
