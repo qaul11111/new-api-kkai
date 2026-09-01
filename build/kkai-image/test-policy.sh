@@ -65,6 +65,10 @@ contains 'GOFLAGS=-tags=kkai_bridge' "${DOCKERFILE}" ||
   fail "Dockerfile cannot compile the explicit bridge schema contract"
 contains 'io.kkrich.schema-contract="${KKAI_SCHEMA_CONTRACT}"' "${DOCKERFILE}" ||
   fail "runtime image does not identify its schema contract"
+contains 'HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=20' "${DOCKERFILE}" ||
+  fail "runtime image does not define the production health-check timing"
+contains 'CMD ["/usr/bin/wget", "--quiet", "--output-document=/dev/null", "http://127.0.0.1:3000/api/status"]' "${DOCKERFILE}" ||
+  fail "runtime image health check is not exec-form and shell-free"
 [[ "$(grep -Fc 'common.SchemaManagementMode=external' "${DOCKERFILE}")" -eq 3 ]] ||
   fail "application, migrator, and archive executor must compile with external schema management"
 contains 'ARG BUN_NETWORK_CONCURRENCY=1' "${DOCKERFILE}" ||
@@ -133,7 +137,7 @@ contains '--expected-infra-sha "${KKAI_INFRA_SHA}"' "${DEPLOY_SCRIPT}" ||
 contains '--deployment-protocol "${KKAI_DEPLOYMENT_PROTOCOL}"' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not pin the deployment protocol"
 contains 'archive checksum mismatch' "${DEPLOY_SCRIPT}" || fail "manual deploy omits local archive verification"
-contains 'KKAI_INFRA_SHA=f240cc535ddfc52fed6a86e759e1cee19a19fa4f' "${DEPLOY_CONTRACT}" ||
+contains 'KKAI_INFRA_SHA=0ef7ad0defbe1784681e435ed64b8deea8a604f1' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the approved infrastructure commit"
 contains 'KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the staged protocol"

@@ -174,5 +174,7 @@ ENV TZ=Asia/Shanghai \
 WORKDIR /data
 USER 10007:10007
 EXPOSE 3000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=20 \
+  CMD ["/usr/bin/wget", "--quiet", "--output-document=/dev/null", "http://127.0.0.1:3000/api/status"]
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["/new-api-entrypoint"]

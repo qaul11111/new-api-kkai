@@ -225,7 +225,7 @@ make newapi-status
 仓库约定的基础设施 contract 当前为：
 
 ```text
-KKAI_INFRA_SHA=f240cc535ddfc52fed6a86e759e1cee19a19fa4f
+KKAI_INFRA_SHA=0ef7ad0defbe1784681e435ed64b8deea8a604f1
 KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged
 ```
 
