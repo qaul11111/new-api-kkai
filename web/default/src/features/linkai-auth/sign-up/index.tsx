@@ -177,7 +177,14 @@ export function LinkAiSignUpPage({
           </div>
         )}
 
-        {showPasswordForm && <LinkAiSignUpForm state={state} />}
+        {showPasswordForm && (
+          <div
+            data-linkai-auth-password-section
+            className={showDivider ? undefined : 'mt-6'}
+          >
+            <LinkAiSignUpForm state={state} />
+          </div>
+        )}
 
         <p
           data-linkai-auth-footer

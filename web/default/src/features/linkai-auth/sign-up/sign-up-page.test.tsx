@@ -223,7 +223,7 @@ describe('LinkAI sign-up page', () => {
   test('hides OAuth providers when OAuth registration is disabled', () => {
     setStatus({ oauth_register_enabled: false, github_oauth: true })
 
-    render(<LinkAiSignUpPage />)
+    const { container } = render(<LinkAiSignUpPage />)
 
     expect(
       screen.queryByRole('button', { name: 'Continue with GitHub' })
@@ -231,6 +231,7 @@ describe('LinkAI sign-up page', () => {
     expect(
       screen.getByRole('button', { name: 'Create account' })
     ).toBeInTheDocument()
+    expect(container.querySelector('form')?.parentElement).toHaveClass('mt-6')
   })
 
   test('hides the password form when password registration is disabled', () => {
