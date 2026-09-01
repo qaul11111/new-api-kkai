@@ -61,16 +61,22 @@ contains 'io.kkrich.schema-contract="${KKAI_SCHEMA_CONTRACT}"' "${DOCKERFILE}" |
   fail "runtime image does not identify its schema contract"
 [[ "$(grep -Fc 'common.SchemaManagementMode=external' "${DOCKERFILE}")" -eq 3 ]] ||
   fail "application, migrator, and archive executor must compile with external schema management"
-[[ "$(grep -Fc -- 'bun install --frozen-lockfile --network-concurrency=1' "${DOCKERFILE}")" -eq 1 ]] ||
+contains 'ARG BUN_NETWORK_CONCURRENCY=1' "${DOCKERFILE}" ||
+  fail "frontend dependency downloads do not default to serialized network access"
+[[ "$(grep -Fc -- 'bun install --frozen-lockfile --network-concurrency="${BUN_NETWORK_CONCURRENCY}"' "${DOCKERFILE}")" -eq 1 ]] ||
   fail "frontend dependencies must use one serialized, shared install stage"
-contains 'id=kkai-newapi-bun-v1,target=/root/.bun/install/cache,sharing=locked' "${DOCKERFILE}" ||
+contains 'id=kkai-newapi-bun-v2-${BUILDARCH},target=/root/.bun/install/cache,sharing=locked' "${DOCKERFILE}" ||
   fail "frontend dependency downloads do not use a persistent locked cache"
+contains 'FROM --platform=$BUILDPLATFORM ${BUN_IMAGE} AS web-deps' "${DOCKERFILE}" ||
+  fail "frontend build tools do not run on the native build platform"
 contains 'FROM web-deps AS web-default' "${DOCKERFILE}" ||
   fail "default frontend does not reuse the shared dependency stage"
 contains 'VITE_KKAI_SCHEMA_CONTRACT="${KKAI_SCHEMA_CONTRACT}"' "${DOCKERFILE}" ||
   fail "default frontend is not bound to the immutable schema contract"
 contains 'FROM web-deps AS web-classic' "${DOCKERFILE}" ||
   fail "classic frontend does not reuse the shared dependency stage"
+[[ "$(grep -Fc 'FROM --platform=$BUILDPLATFORM ${GO_IMAGE}' "${DOCKERFILE}")" -eq 2 ]] ||
+  fail "Go application and runtime-tool stages do not cross-compile from the native build platform"
 contains '--platform linux/amd64' "${BUILD_SCRIPT}" || fail "manual build is not pinned to AMD64"
 contains 'production/kkrich' "${BUILD_SCRIPT}" || fail "manual build does not require the production branch"
 contains 'status --porcelain=v1 --untracked-files=all' "${BUILD_SCRIPT}" ||
