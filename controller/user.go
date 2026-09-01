@@ -17,10 +17,7 @@ import (
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/service/authz"
-	"github.com/QuantumNous/new-api/setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
-
-	"github.com/QuantumNous/new-api/constant"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -182,128 +179,6 @@ func Logout(c *gin.Context) {
 	})
 }
 
-func Register(c *gin.Context) {
-	if !common.RegisterEnabled {
-		common.ApiErrorI18n(c, i18n.MsgUserRegisterDisabled)
-		return
-	}
-	if !common.PasswordRegisterEnabled {
-		common.ApiErrorI18n(c, i18n.MsgUserPasswordRegisterDisabled)
-		return
-	}
-	var request dto.RegisterRequest
-	err := common.DecodeJson(c.Request.Body, &request)
-	if err != nil {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-	request.Username = strings.TrimSpace(request.Username)
-	request.Email = model.NormalizeEmail(request.Email)
-	accountType, validAccountType := common.NormalizeAccountType(request.AccountType)
-	if request.Username == "" || !validAccountType {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-	if err := common.Validate.Struct(&request); err != nil {
-		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
-		return
-	}
-	if common.EmailVerificationEnabled {
-		if request.Email == "" || request.VerificationCode == "" {
-			common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
-			return
-		}
-		if !common.VerifyCodeWithKey(request.Email, request.VerificationCode, common.EmailVerificationPurpose) {
-			common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
-			return
-		}
-		if err := model.EnsureEmailAvailable(request.Email, 0); err != nil {
-			if errors.Is(err, model.ErrEmailAlreadyTaken) {
-				common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
-				return
-			}
-			common.ApiErrorI18n(c, i18n.MsgDatabaseError)
-			return
-		}
-	}
-	emailForExistCheck := ""
-	if common.EmailVerificationEnabled {
-		emailForExistCheck = request.Email
-	}
-	exist, err := model.CheckUserExistOrDeleted(request.Username, emailForExistCheck)
-	if err != nil {
-		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
-		common.SysLog(fmt.Sprintf("CheckUserExistOrDeleted error: %v", err))
-		return
-	}
-	if exist {
-		common.ApiErrorI18n(c, i18n.MsgUserExists)
-		return
-	}
-	affCode := request.AffCode // this code is the inviter's code, not the user's own code
-	inviterId, _ := model.GetUserIdByAffCode(affCode)
-	cleanUser := model.User{
-		Username:    request.Username,
-		Password:    request.Password,
-		DisplayName: request.Username,
-		InviterId:   inviterId,
-		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
-		AccountType: accountType,
-	}
-	if common.EmailVerificationEnabled {
-		cleanUser.Email = request.Email
-	}
-	if err := cleanUser.Insert(inviterId); err != nil {
-		if errors.Is(err, model.ErrEmailAlreadyTaken) {
-			common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
-			return
-		}
-		common.ApiError(c, err)
-		return
-	}
-
-	// 获取插入后的用户ID
-	var insertedUser model.User
-	if err := model.DB.Where("username = ?", cleanUser.Username).First(&insertedUser).Error; err != nil {
-		common.ApiErrorI18n(c, i18n.MsgUserRegisterFailed)
-		return
-	}
-	// 生成默认令牌
-	if constant.GenerateDefaultToken {
-		key, err := common.GenerateKey()
-		if err != nil {
-			common.ApiErrorI18n(c, i18n.MsgUserDefaultTokenFailed)
-			common.SysLog("failed to generate token key: " + err.Error())
-			return
-		}
-		// 生成默认令牌
-		token := model.Token{
-			UserId:             insertedUser.Id, // 使用插入后的用户ID
-			Name:               cleanUser.Username + "的初始令牌",
-			Key:                key,
-			CreatedTime:        common.GetTimestamp(),
-			AccessedTime:       common.GetTimestamp(),
-			ExpiredTime:        -1,     // 永不过期
-			RemainQuota:        500000, // 示例额度
-			UnlimitedQuota:     true,
-			ModelLimitsEnabled: false,
-		}
-		if setting.DefaultUseAutoGroup {
-			token.Group = "auto"
-		}
-		if err := token.Insert(); err != nil {
-			common.ApiErrorI18n(c, i18n.MsgCreateDefaultTokenErr)
-			return
-		}
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
-	return
-}
-
 func GetAllUsers(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
 	users, total, err := model.GetAllUsers(pageInfo)
@@ -315,43 +190,6 @@ func GetAllUsers(c *gin.Context) {
 	pageInfo.SetTotal(int(total))
 	pageInfo.SetItems(users)
 
-	common.ApiSuccess(c, pageInfo)
-	return
-}
-
-func SearchUsers(c *gin.Context) {
-	keyword := c.Query("keyword")
-	group := c.Query("group")
-	accountType := strings.TrimSpace(c.Query("account_type"))
-	if accountType != "" {
-		var valid bool
-		accountType, valid = common.NormalizeAccountType(accountType)
-		if !valid {
-			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-			return
-		}
-	}
-	var role *int
-	if roleStr := c.Query("role"); roleStr != "" {
-		if parsed, err := strconv.Atoi(roleStr); err == nil {
-			role = &parsed
-		}
-	}
-	var status *int
-	if statusStr := c.Query("status"); statusStr != "" {
-		if parsed, err := strconv.Atoi(statusStr); err == nil {
-			status = &parsed
-		}
-	}
-	pageInfo := common.GetPageQuery(c)
-	users, total, err := model.SearchUsers(keyword, group, accountType, role, status, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-
-	pageInfo.SetTotal(int(total))
-	pageInfo.SetItems(users)
 	common.ApiSuccess(c, pageInfo)
 	return
 }
@@ -731,58 +569,6 @@ func UpdateUser(c *gin.Context) {
 	return
 }
 
-func UpdateUserAccountType(c *gin.Context) {
-	id, err := strconv.Atoi(c.Param("id"))
-	if err != nil || id <= 0 {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-
-	var request dto.UpdateAccountTypeRequest
-	if err := common.DecodeJson(c.Request.Body, &request); err != nil {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-	accountType, valid := common.NormalizeAccountType(request.AccountType)
-	if !valid || strings.TrimSpace(request.AccountType) == "" {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-
-	user, err := model.GetUserById(id, false)
-	if err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	if !canManageTargetRole(c.GetInt("role"), user.Role) {
-		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionHigherLevel)
-		return
-	}
-	previous := common.EffectiveAccountType(user.AccountType)
-	if err := model.UpdateUserAccountType(id, accountType); err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	if err := model.InvalidateUserCache(id); err != nil {
-		common.SysLog(fmt.Sprintf("failed to invalidate user cache for user %d: %s", id, err.Error()))
-	}
-	if err := model.InvalidateUserTokensCache(id); err != nil {
-		common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", id, err.Error()))
-	}
-	recordManageAuditFor(c, id, "user.account_type.update", map[string]interface{}{
-		"from": previous,
-		"to":   accountType,
-	})
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-		"data": gin.H{
-			"id":           id,
-			"account_type": accountType,
-		},
-	})
-}
-
 func AdminClearUserBinding(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -1007,71 +793,6 @@ func DeleteSelf(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"message": "",
-	})
-	return
-}
-
-func CreateUser(c *gin.Context) {
-	var user model.User
-	err := json.NewDecoder(c.Request.Body).Decode(&user)
-	user.Username = strings.TrimSpace(user.Username)
-	if err != nil || user.Username == "" || user.Password == "" {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-	if err := common.Validate.Struct(&user); err != nil {
-		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
-		return
-	}
-	if user.DisplayName == "" {
-		user.DisplayName = user.Username
-	}
-	accountType, validAccountType := common.NormalizeAccountType(user.AccountType)
-	if !validAccountType {
-		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
-		return
-	}
-	myRole := c.GetInt("role")
-	if user.Role >= myRole {
-		common.ApiErrorI18n(c, i18n.MsgUserCannotCreateHigherLevel)
-		return
-	}
-	// Even for admin users, we cannot fully trust them!
-	cleanUser := model.User{
-		Username:    user.Username,
-		Password:    user.Password,
-		DisplayName: user.DisplayName,
-		Role:        user.Role, // 保持管理员设置的角色
-		AccountType: accountType,
-	}
-	authzTouched := false
-	if err := model.DB.Transaction(func(tx *gorm.DB) error {
-		if err := cleanUser.InsertWithTx(tx, 0); err != nil {
-			return err
-		}
-		touched, err := updateAdminPermissionsForUserInTx(c, tx, cleanUser.Id, cleanUser.Role, user.AdminPermissions)
-		authzTouched = touched
-		return err
-	}); err != nil {
-		common.ApiError(c, err)
-		return
-	}
-	if authzTouched {
-		if err := authz.ReloadPolicy(); err != nil {
-			common.ApiError(c, err)
-			return
-		}
-	}
-	cleanUser.FinishInsert(0)
-
-	recordManageAuditFor(c, cleanUser.Id, "user.create", map[string]interface{}{
-		"username":     cleanUser.Username,
-		"role":         cleanUser.Role,
-		"account_type": cleanUser.AccountType,
-	})
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"message": "",

@@ -15,6 +15,7 @@ fi
 # shellcheck disable=SC1090
 source "$BASELINE_FILE"
 BASE=${KKAI_UPSTREAM_BASE:?missing KKAI_UPSTREAM_BASE}
+SOURCE_SIZE_BASE=${KKAI_SOURCE_SIZE_BASE:?missing KKAI_SOURCE_SIZE_BASE}
 
 cd "$ROOT"
 
@@ -25,6 +26,16 @@ fi
 
 if ! git merge-base --is-ancestor "$BASE" HEAD; then
   echo "Candidate HEAD is not descended from pinned upstream $BASE" >&2
+  exit 1
+fi
+
+if ! git cat-file -e "$SOURCE_SIZE_BASE^{commit}" 2>/dev/null; then
+  echo "Pinned source-size baseline is unavailable: $SOURCE_SIZE_BASE" >&2
+  exit 1
+fi
+
+if ! git merge-base --is-ancestor "$SOURCE_SIZE_BASE" HEAD; then
+  echo "Candidate HEAD is not descended from source-size baseline $SOURCE_SIZE_BASE" >&2
   exit 1
 fi
 
@@ -40,7 +51,7 @@ if [[ ! -x "$ROOT/web/node_modules/.bin/oxlint" ]]; then
 fi
 
 TMP_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/kkai-quality.XXXXXX")
-BASE_TREE="$TMP_ROOT/upstream"
+BASE_TREE="$TMP_ROOT/approved-fork"
 
 cleanup() {
   git worktree remove --force "$BASE_TREE" >/dev/null 2>&1 || true
@@ -50,7 +61,7 @@ trap cleanup EXIT
 
 echo "[1/9] Checking fork ancestry and changed-file hygiene"
 "$ROOT/scripts/kkai/check-fork-source-size_test.sh"
-"$ROOT/scripts/kkai/check-fork-source-size.sh" "$BASE"
+"$ROOT/scripts/kkai/check-fork-source-size.sh" "$SOURCE_SIZE_BASE"
 
 GOFMT_ISSUES="$TMP_ROOT/gofmt-issues.txt"
 while IFS= read -r path; do
@@ -95,16 +106,16 @@ echo "[4/9] Building classic frontend"
 )
 
 echo "[5/9] Checking formatting of fork-owned frontend changes"
-bun "$ROOT/scripts/kkai/check-changed-format.mjs" "$BASE"
+bun "$ROOT/scripts/kkai/check-changed-format.mjs" "$SOURCE_SIZE_BASE"
 
-echo "[6/9] Preparing detached upstream baseline"
-git worktree add --quiet --detach "$BASE_TREE" "$BASE"
+echo "[6/9] Preparing detached approved-fork baseline"
+git worktree add --quiet --detach "$BASE_TREE" "$SOURCE_SIZE_BASE"
 ln -s "$ROOT/web/node_modules" "$BASE_TREE/web/node_modules"
 mkdir -p "$BASE_TREE/web/default/dist" "$BASE_TREE/web/classic/dist"
 printf '%s\n' '<!doctype html><title>quality baseline</title>' >"$BASE_TREE/web/default/dist/index.html"
 printf '%s\n' '<!doctype html><title>quality baseline</title>' >"$BASE_TREE/web/classic/dist/index.html"
 
-echo "[7/9] Comparing default lint diagnostics with upstream"
+echo "[7/9] Comparing default lint diagnostics with approved fork"
 OXLINT="$ROOT/web/node_modules/.bin/oxlint"
 set +e
 (
@@ -127,7 +138,7 @@ fi
 bun "$ROOT/scripts/kkai/compare-diagnostics.mjs" \
   oxlint "$TMP_ROOT/oxlint-base.json" "$TMP_ROOT/oxlint-current.json"
 
-echo "[8/9] Comparing Go vet diagnostics with upstream"
+echo "[8/9] Comparing Go vet diagnostics with approved fork"
 (cd "$BASE_TREE" && go mod download)
 go mod download
 set +e
@@ -153,4 +164,4 @@ else
   echo "Quick mode: skipped default and kkai_bridge Go test suites; CI runs --full."
 fi
 
-echo "KKAI fork quality gate passed against $KKAI_UPSTREAM_LABEL ($BASE)."
+echo "KKAI fork quality gate passed with upstream ancestry $KKAI_UPSTREAM_LABEL ($BASE) and approved-fork diagnostics $SOURCE_SIZE_BASE."

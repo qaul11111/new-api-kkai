@@ -59,7 +59,7 @@
 
 1. `/usr/local/sbin/kkai-newapi-manual-deploy` 当前只实现 `status` 和 `preflight`，`stage`、`promote`、`rollback` 会明确拒绝执行；
 2. sys3 当前是单应用实例 Compose，不具备只替换空闲槽位、候选只读验收、原版本原地待命的完整蓝绿结构；
-3. 最近确认的 schema 是 v4，而当前正式构建契约只覆盖 `bridge=(7,8,7)` 和 `feature=(8,8,8)`。
+3. 最近确认的 schema 是 v4，而当前 B/C 正式构建的 `bridge` 与 `feature` 契约都要求 `(9,9,9)`。
 
 因此，在下一次普通生产发布前必须先完成以下工作：
 
@@ -243,12 +243,11 @@ DSN 必须通过受控 stdin 或 secret provider 传入，禁止：
 
 | 在线 schema              | 构建参数                    | 允许发布                 |
 | ------------------------ | --------------------------- | ------------------------ |
-| v7                       | `--schema-contract bridge`  | 是，数据库保持 v7        |
-| v8                       | `--schema-contract feature` | 是，仅在 v8 已独立确认后 |
-| v4、v5、v6               | 无当前普通发布契约          | STOP，先走独立迁移计划   |
+| v9                       | `--schema-contract feature` | 是，仅在 v9 已独立确认后 |
+| v4、v5、v6、v7、v8      | 无当前普通发布契约          | STOP，先走独立迁移计划   |
 | 未知、校验失败、未来版本 | 无                          | STOP                     |
 
-`bridge` 是 `(runtime_min=7, runtime_max=8, migration_target=7)`；`feature` 是 `(8,8,8)`。generic preflight 显示 ready 不代表 schema 兼容。
+当前 `bridge` 与 `feature` 都是 `(runtime_min=9, runtime_max=9, migration_target=9)`。bridge 构建标签仅为构建兼容保留，不表示 B/C 代码可在 v8 运行。generic preflight 显示 ready 不代表 schema 兼容。
 
 sys3 最近确认是 v4，因此不能直接部署当前 `bridge` 或 `feature` 正式镜像。必须先按 [migrations.md](./migrations.md) 单独完成受控升级，或保持经过单独评审的旧后端兼容制品。后者不是长期标准发布路径。
 
@@ -381,11 +380,8 @@ Redis 备份至少需要：
 ```bash
 cd "$app_repo"
 
-# 在线 schema 为 v7：
-scripts/kkai/build-manual-release.sh --schema-contract bridge
-
-# 仅当在线 schema 已独立确认是 v8 时，才可改用：
-# scripts/kkai/build-manual-release.sh --schema-contract feature
+# 仅当在线 schema 已独立确认是 v9：
+scripts/kkai/build-manual-release.sh --schema-contract feature
 ```
 
 脚本输出：

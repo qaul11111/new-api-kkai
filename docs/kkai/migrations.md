@@ -16,14 +16,15 @@ tables.
 | 6 | `video_sample_category` | Nullable `kkai_video_samples.category` column |
 | 7 | `image_studio` | Four additive Image Studio tables |
 | 8 | `stateless_authentication` | Session, one-time auth flow, external identity, user auth version, and token auto-group schema |
+| 9 | `user_account_type` | Nullable `users.account_type` column plus consumer backfill |
 
 Version 4 is an explicit bridge on every supported dialect. MySQL 5.7 and
 PostgreSQL alter `kkai_outbox.event_key` to `VARCHAR(191)`; SQLite records the
 same immutable migration as a physical no-op. Keeping one v4 ledger prefix
 across SQLite, MySQL, and PostgreSQL makes the v5 rollout and rollback contract
 unambiguous. That historical bridge was pinned to version 3 while accepting
-versions through 7. The current bridge accepts versions 7 through 8 and keeps
-its migration target at 7; the current feature build requires version 8.
+versions through 7. The current B/C application code reads and writes the v9
+`users.account_type` column, so both current application profiles require v9.
 Neither application profile changes the schema during startup.
 
 Version 5 is an additive expand migration. It creates exactly these tables and
@@ -209,30 +210,27 @@ scripts/kkai/build-manual-release.sh --schema-contract feature
 That historical feature contract was `(7,7,7)` and failed closed on pre-v7
 databases. It is not the current untagged feature profile.
 
-## Current V8 Authentication Expand
+## Current V9 Account-Type Expand
 
-The current bridge contract is `(7,8,7)` with only the canonical v7 and v8
-prefixes. For an ordinary application release on live schema v7, build this
-profile and leave the database unchanged:
+The current bridge and feature contracts are both `(9,9,9)` with only the
+canonical v9 prefix. The bridge build tag is retained for build compatibility,
+but it does not advertise v8 runtime compatibility because B/C registration,
+administration, image, and video paths access `users.account_type`.
 
-```bash
-scripts/kkai/build-manual-release.sh --schema-contract bridge
-```
-
-The current feature contract is `(8,8,8)` with only the canonical v8 prefix.
-It cannot start on v7. Use it only after the separately authorized v8 procedure
-has completed and `current_version: 8` has been independently observed:
+Use the production feature profile only after the separately authorized v9
+procedure has completed and `current_version: 9` has been independently
+observed:
 
 ```bash
 scripts/kkai/build-manual-release.sh --schema-contract feature
 ```
 
-The v8 migration requires the reviewed bridge in both effective slots, a safe
-authentication precheck, a verified snapshot, explicit apply confirmation,
-and post-apply check/observe. Ordinary application delivery and generic deploy
-preflight do not run or prove any of those gates. There is no automatic down
-migration; retain the reviewed bridge and rollback evidence under the
-infrastructure runbook's retention rules.
+The v8 authentication migration and v9 account-type migration require their own
+reviewed sequence, safe prechecks, a verified snapshot, explicit apply
+confirmation, and post-apply check/observe. Ordinary application delivery and
+generic deploy preflight do not run or prove any of those gates. There is no
+automatic down migration; retain the pre-migration application and rollback
+evidence under the infrastructure runbook's retention rules.
 
 ## Legacy Import
 
@@ -249,7 +247,7 @@ separate post-stability operation and is not part of ordinary delivery.
 ## Operator Migration Rules
 
 Ordinary release automation does not run schema observation or migrations. It
-does not execute migration version 4, 5, 6, 7, or 8.
+does not execute migration version 4, 5, 6, 7, 8, or 9.
 
 If a future PostgreSQL migration is needed:
 

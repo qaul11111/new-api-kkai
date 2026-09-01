@@ -92,7 +92,11 @@ compatibility behavior rather than presented as general upstream cleanup.
 
 `scripts/kkai/check-fork-quality.sh` enforces the following:
 
-- the pinned upstream commit is an ancestor of the checked commit;
+- the pinned upstream commit and the frozen, approved fork source-size snapshot
+  are ancestors of the checked commit;
+- source-size checks use `KKAI_SOURCE_SIZE_BASE` to record pre-existing fork
+  debt without exempting later growth; changing it requires an explicit debt
+  review;
 - new fork-owned feature source files stay at or below 250 lines and other new
   fork-owned source files stay at or below 500 lines, excluding generated code;
 - changes to existing upstream source add at most 100 lines per file, reduced
@@ -102,15 +106,17 @@ compatibility behavior rather than presented as general upstream cleanup.
   oversized upstream files, and generated-file exemptions cannot silently drift;
 - changed Go files are formatted and changed shell scripts parse;
 - default typecheck and both frontend builds succeed;
-- changed frontend files are formatted;
-- default frontend lint diagnostics do not increase over upstream by
-  file/rule/severity;
-- Go vet diagnostics do not increase over upstream by file/message;
+- frontend files changed after the frozen fork snapshot are formatted;
+- default frontend lint diagnostics do not increase over the frozen fork
+  snapshot by file/rule/severity;
+- Go vet diagnostics do not increase over the frozen fork snapshot by
+  file/message;
 - full mode runs the Go test suite.
 
-The baseline is computed from a temporary detached worktree at the pinned
-commit. Existing upstream warnings remain visible but are not attributed to
-KKAI. Any additional warning or error introduced by the fork fails the gate.
+The diagnostic baseline is computed from a temporary detached worktree at the
+frozen, approved fork snapshot. Existing debt remains visible but is not
+attributed to a new release unless its counts increase. Upstream ancestry is
+still checked independently against the pinned upstream commit.
 These checks run during review and development workflows; they do not run beside
 or block the production image workflow.
 
@@ -122,10 +128,10 @@ or block the production image workflow.
   `production/kkrich` branch. `scripts/kkai/build-manual-release.sh` builds one
   Linux AMD64 image and binds its immutable archive and metadata to that source
   revision.
-- The build profile must match the live schema: use the `(7,8,7)` bridge while
-  an application-only release keeps schema v7, and use the `(8,8,8)` feature
-  only after v8 is independently observed. Generic deployment preflight is not
-  schema-compatibility evidence; without exact v8 evidence, use the bridge.
+- The build profile must match the live schema. The B/C release writes
+  `users.account_type`, so the current bridge and feature profiles are both
+  `(9,9,9)`. Generic deployment preflight is not schema-compatibility evidence;
+  without exact v9 evidence, stop before building a production release.
 - The operator transfers that exact local archive over the private SSH path and
   uses the manual infrastructure controller to stage, verify, and promote it.
   No registry publication, signing service, repository dispatch, or network

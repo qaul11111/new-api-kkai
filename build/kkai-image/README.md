@@ -11,21 +11,21 @@ There is no production-safe profile default for every live schema. Production
 commands must pass `--schema-contract` explicitly after the live schema has
 been established:
 
-- `bridge` is the current `(7,8,7)` profile. Use it for an application-only
-  release while the database remains at v7.
-- `feature` is the current `(8,8,8)` profile. Use it only after schema v8 has
-  been independently observed.
+- `feature` is the current `(9,9,9)` production profile. Use it only after
+  schema v9 has been independently observed.
+- `bridge` is currently also `(9,9,9)`. The tag remains available for build
+  compatibility, but it does not claim that B/C code can run on schema v8.
 
-Without exact v8 evidence, select `bridge`; do not omit the explicit profile or
-use generic deployment preflight to infer the live schema.
+Without exact v9 evidence, stop; do not omit the explicit profile or use
+generic deployment preflight to infer the live schema.
 
-Build the v7-to-v8 bridge profile with:
+Build the current production profile with:
 
 ```bash
-scripts/kkai/build-manual-release.sh --schema-contract bridge
+scripts/kkai/build-manual-release.sh --schema-contract feature
 ```
 
-Use `--schema-contract feature` only after the v8 schema gate passes. The
+Use it only after the v9 schema gate passes. The
 profile is recorded in release metadata and in the image's
 `io.kkrich.schema-contract` label. The staging client validates the metadata
 value and forwards it to the production controller, which must match it against

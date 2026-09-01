@@ -20,7 +20,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useQuery } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -62,7 +62,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
-import { ACCOUNT_TYPE, ACCOUNT_TYPE_OPTIONS } from '@/lib/account-type'
+import { ACCOUNT_TYPE } from '@/lib/account-type'
 import {
   ADMIN_PERMISSION_ACTIONS,
   ADMIN_PERMISSION_RESOURCES,
@@ -92,6 +92,7 @@ import {
   transformUserToFormDefaults,
 } from '../lib'
 import type { User } from '../types'
+import { UserAccountTypeField } from './user-account-type-field'
 import { UserQuotaDialog } from './user-quota-dialog'
 import { useUsers } from './users-provider'
 
@@ -155,8 +156,9 @@ export function UsersMutateDrawer({
   const currencyLabel = getCurrencyLabel()
   const tokensOnly = currencyMeta.kind === 'tokens'
 
-  const currentQuotaRaw = form.watch('quota_dollars') || 0
-  const selectedRole = form.watch('role')
+  const currentQuotaRaw =
+    useWatch({ control: form.control, name: 'quota_dollars' }) || 0
+  const selectedRole = useWatch({ control: form.control, name: 'role' })
   const canEditAdminPermissions = currentUser?.role === ROLE.SUPER_ADMIN
   const targetIsAdmin = (selectedRole ?? currentRow?.role ?? 0) >= ROLE.ADMIN
 
@@ -319,47 +321,7 @@ export function UsersMutateDrawer({
                   />
                 )}
 
-                <FormField
-                  control={form.control}
-                  name='account_type'
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('Account type')}</FormLabel>
-                      <Select
-                        items={ACCOUNT_TYPE_OPTIONS.map((option) => ({
-                          value: option.value,
-                          label: t(option.labelKey),
-                        }))}
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={t('Select account type')}
-                            />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent alignItemWithTrigger={false}>
-                          <SelectGroup>
-                            {ACCOUNT_TYPE_OPTIONS.map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
-                              >
-                                {t(option.labelKey)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        {t('Controls which model groups this user can access')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <UserAccountTypeField form={form} />
 
                 <FormField
                   control={form.control}
