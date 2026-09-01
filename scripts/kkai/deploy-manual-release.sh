@@ -19,10 +19,15 @@ sha256_file() {
   shasum -a 256 "$1" | awk '{print $1}'
 }
 
-[[ $# -eq 2 && $1 == --stage ]] ||
-  die "usage: deploy-manual-release.sh --stage METADATA.json"
+[[ $# -eq 2 ]] ||
+  die "usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json"
+action=$1
+case "${action}" in
+  --stage | --promote | --rollback) ;;
+  *) die "usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json" ;;
+esac
 METADATA="$(cd -- "$(dirname -- "$2")" && pwd)/$(basename -- "$2")"
-readonly METADATA
+readonly action METADATA
 [[ -f "${METADATA}" ]] || die "metadata file is missing"
 [[ -f "${CONTRACT}" && ! -L "${CONTRACT}" ]] || die "deployment contract is missing or unsafe"
 for command_name in jq scp ssh; do
@@ -59,8 +64,10 @@ esac
 [[ "${platform}" == linux/amd64 ]] || die "invalid release platform"
 
 archive="$(dirname -- "${METADATA}")/${archive_name}"
-[[ -f "${archive}" ]] || die "release archive is missing"
-[[ "$(sha256_file "${archive}")" == "${archive_sha256}" ]] || die "archive checksum mismatch"
+if [[ "${action}" == --stage ]]; then
+  [[ -f "${archive}" ]] || die "release archive is missing"
+  [[ "$(sha256_file "${archive}")" == "${archive_sha256}" ]] || die "archive checksum mismatch"
+fi
 
 readonly HOST=ubuntu@51.81.154.107
 readonly KEY=/Users/wxl/.ssh/sys3_wsx_new
@@ -76,7 +83,23 @@ readonly -a SSH_OPTIONS=(
   -o ProxyCommand=none
   -o ProxyJump=none
   -o KexAlgorithms=curve25519-sha256
+  -o ServerAliveInterval=15
+  -o ServerAliveCountMax=4
 )
+
+if [[ "${action}" == --promote ]]; then
+  ssh "${SSH_OPTIONS[@]}" "${HOST}" \
+    sudo -n /usr/local/sbin/kkai-newapi-manual-deploy promote \
+      --expected-source-sha "${source_sha}"
+  exit 0
+fi
+
+if [[ "${action}" == --rollback ]]; then
+  ssh "${SSH_OPTIONS[@]}" "${HOST}" \
+    sudo -n /usr/local/sbin/kkai-newapi-manual-deploy rollback \
+      --expected-source-sha "${source_sha}"
+  exit 0
+fi
 
 preflight_output=''
 if ! preflight_output="$(

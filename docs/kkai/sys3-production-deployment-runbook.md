@@ -166,12 +166,14 @@ git config --local --get remote.origin.gh-resolved
 
 通过条件：`origin` 严格等于所有者仓库，默认仓库输出严格等于 `qaul11111/new-api-kkai`，`remote.origin.gh-resolved` 等于 `base`。
 
-手动 workflow 必须显式指定目标和 ref，例如：
+手动 workflow 必须显式指定目标、ref 和精确源码 SHA，例如：
 
 ```bash
-gh workflow run <workflow-file> \
+gh workflow run docker-image-branch.yml \
   --repo qaul11111/new-api-kkai \
-  --ref production/kkrich
+  --ref production/kkrich \
+  -f source_sha="$(git rev-parse HEAD)" \
+  -f schema_contract=feature
 gh run view <run-id> --repo qaul11111/new-api-kkai
 ```
 
@@ -223,7 +225,7 @@ make newapi-status
 仓库约定的基础设施 contract 当前为：
 
 ```text
-KKAI_INFRA_SHA=393ee2cb3446472d57da59c011c71abd29c3a660
+KKAI_INFRA_SHA=8b9bc87a02c1aab8a1c45ccf2c80d83a58ec66f6
 KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged
 ```
 
@@ -402,13 +404,27 @@ Redis 备份至少需要：
 
 ## 11. 阶段 E：构建不可变发布制品
 
+正式制品必须由 GitHub 原生 amd64 runner 构建。工作流只上传离线 tar 和 metadata，不登录或推送 Docker Hub、GHCR 或任何第三方镜像仓库。
+
 在生产分支干净、测试通过、在线 schema 已确认后执行：
 
 ```bash
 cd "$app_repo"
+source_sha="$(git rev-parse HEAD)"
 
 # 仅当在线 schema 已独立确认是 v9：
-scripts/kkai/build-manual-release.sh --schema-contract feature
+gh workflow run docker-image-branch.yml \
+  --repo qaul11111/new-api-kkai \
+  --ref production/kkrich \
+  -f source_sha="${source_sha}" \
+  -f schema_contract=feature
+
+# 取得并核对本次 run-id 后；所有 gh 命令仍必须显式指定仓库：
+gh run watch <run-id> --repo qaul11111/new-api-kkai --exit-status
+gh run download <run-id> \
+  --repo qaul11111/new-api-kkai \
+  --name "kkai-production-${source_sha}" \
+  --dir .local-releases/downloaded
 ```
 
 脚本输出：
@@ -418,10 +434,11 @@ scripts/kkai/build-manual-release.sh --schema-contract feature
 
 构建要求：
 
-- 必须在可信构建工作站执行，禁止在 sys3 构建；
+- 必须在 `qaul11111/new-api-kkai` 的 GitHub 原生 amd64 runner 执行，禁止在 sys3 构建；
 - 平台必须是 `linux/amd64`；
 - 一个 source SHA 只构建一个不可变 release；
 - 不允许使用 `latest`；
+- 不允许触发或使用会推送 `calciumion/new-api` 的上游发布工作流；
 - 构建失败后如果修改了源码、锁文件或依赖，必须提交新 SHA 并生成新版本；
 - 不覆盖或复用已有 `.tar` / `.json`。
 
@@ -461,14 +478,14 @@ shasum -a 256 "$release_tar"
 
 ### 12.2 Stage
 
-只有当控制器补齐蓝绿 stage 能力、全部门禁通过并取得当次发布授权后，才按全局手册执行：
+全部门禁通过并取得当次发布授权后，才按全局手册执行：
 
 ```bash
 cd "$app_repo"
 scripts/kkai/deploy-manual-release.sh --stage "$release_json"
 ```
 
-注意：客户端虽然已固定为 sys3，但当前控制器会对 `stage` fail closed。不得修改脚本或绕过控制器来替换正在服务的 leader。
+客户端固定为 sys3，控制器会校验基础设施 SHA、精确源码 SHA、镜像标签、schema v9、单 leader、Caddy 路由和运行时安全参数。不得绕过控制器替换正在服务的 leader。
 
 stage 只能完成：
 
@@ -480,6 +497,20 @@ stage 只能完成：
 - 暴露只在服务器 loopback 可访问的候选地址。
 
 stage 不得切换公网路由、稳定别名、writer、Redis、release pointer 或 rollback pointer。
+
+候选验收通过后，使用同一份 metadata 提升：
+
+```bash
+scripts/kkai/deploy-manual-release.sh --promote "$release_json"
+```
+
+如切流后的验收失败，使用同一份 metadata 回滚：
+
+```bash
+scripts/kkai/deploy-manual-release.sh --rollback "$release_json"
+```
+
+本次部署不删除旧容器、旧镜像或 Mac 上的唯一数据库备份。旧容器保持停止状态，作为快速回滚源。
 
 ## 13. 阶段 G：候选验收
 

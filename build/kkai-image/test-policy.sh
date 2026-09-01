@@ -13,6 +13,7 @@ readonly FFMPEG_POLICY_TEST="${ROOT}/build/kkai-image/test-ffmpeg-policy.sh"
 readonly RETIRED_WORKFLOW="${ROOT}/.github/workflows/kkai-production-image.yml"
 readonly RETIRED_HEAD_CHECK="${ROOT}/scripts/kkai/require-production-head.sh"
 readonly QUALITY_WORKFLOW="${ROOT}/.github/workflows/kkai-fork-quality.yml"
+readonly MANUAL_ARTIFACT_WORKFLOW="${ROOT}/.github/workflows/docker-image-branch.yml"
 
 fail() {
   echo "KKAI image policy: $*" >&2
@@ -33,8 +34,13 @@ contains() {
 
 ruby -ryaml -e 'YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' "${QUALITY_WORKFLOW}" >/dev/null ||
   fail "invalid quality workflow YAML"
+ruby -ryaml -e 'YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' "${MANUAL_ARTIFACT_WORKFLOW}" >/dev/null ||
+  fail "invalid manual artifact workflow YAML"
 if grep -Eq 'uses: [^ ]+@v[0-9]' "${QUALITY_WORKFLOW}"; then
   fail "quality workflow contains an unpinned action reference"
+fi
+if grep -Eq 'uses: [^ ]+@v[0-9]' "${MANUAL_ARTIFACT_WORKFLOW}"; then
+  fail "manual artifact workflow contains an unpinned action reference"
 fi
 
 for image_arg in BUN_IMAGE GO_IMAGE BUSYBOX_IMAGE DISTROLESS_IMAGE; do
@@ -108,10 +114,14 @@ contains 'readonly HOST=ubuntu@51.81.154.107' "${DEPLOY_SCRIPT}" || fail "manual
 contains 'readonly KEY=/Users/wxl/.ssh/sys3_wsx_new' "${DEPLOY_SCRIPT}" || fail "manual deploy does not use the pinned sys3 key"
 contains 'StrictHostKeyChecking=yes' "${DEPLOY_SCRIPT}" || fail "manual deploy does not require the pinned sys3 host key"
 contains 'ProxyCommand=none' "${DEPLOY_SCRIPT}" || fail "manual deploy may use an SSH proxy"
-contains 'usage: deploy-manual-release.sh --stage METADATA.json' "${DEPLOY_SCRIPT}" ||
-  fail "manual deploy does not require an explicit stage action"
+contains 'usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json' "${DEPLOY_SCRIPT}" ||
+  fail "manual deploy does not require an explicit deployment action"
 contains 'kkai-newapi-manual-deploy stage' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not stage through the production controller"
+contains 'kkai-newapi-manual-deploy promote' "${DEPLOY_SCRIPT}" ||
+  fail "manual deploy does not promote through the production controller"
+contains 'kkai-newapi-manual-deploy rollback' "${DEPLOY_SCRIPT}" ||
+  fail "manual deploy does not roll back through the production controller"
 contains '--schema-contract "${schema_contract}"' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not bind release metadata to the staged schema contract"
 ! contains 'kkai-newapi-manual-deploy deploy' "${DEPLOY_SCRIPT}" ||
@@ -123,7 +133,7 @@ contains '--expected-infra-sha "${KKAI_INFRA_SHA}"' "${DEPLOY_SCRIPT}" ||
 contains '--deployment-protocol "${KKAI_DEPLOYMENT_PROTOCOL}"' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not pin the deployment protocol"
 contains 'archive checksum mismatch' "${DEPLOY_SCRIPT}" || fail "manual deploy omits local archive verification"
-contains 'KKAI_INFRA_SHA=393ee2cb3446472d57da59c011c71abd29c3a660' "${DEPLOY_CONTRACT}" ||
+contains 'KKAI_INFRA_SHA=8b9bc87a02c1aab8a1c45ccf2c80d83a58ec66f6' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the approved infrastructure commit"
 contains 'KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the staged protocol"
@@ -131,6 +141,18 @@ contains 'KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged' "${DEPLOY_CONTRACT}" ||
 if grep -Eiq 'github actions|ghcr\.io|cosign|repository_dispatch|newapi_image_ready' \
   "${BUILD_SCRIPT}" "${DEPLOY_SCRIPT}"; then
   fail "manual delivery scripts still contain automatic delivery behavior"
+fi
+
+contains "github.repository == 'qaul11111/new-api-kkai'" "${MANUAL_ARTIFACT_WORKFLOW}" ||
+  fail "manual artifact workflow is not locked to the owner repository"
+contains 'source_sha:' "${MANUAL_ARTIFACT_WORKFLOW}" ||
+  fail "manual artifact workflow does not require an exact source SHA"
+contains 'scripts/kkai/build-manual-release.sh' "${MANUAL_ARTIFACT_WORKFLOW}" ||
+  fail "manual artifact workflow bypasses the reviewed release builder"
+contains 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' "${MANUAL_ARTIFACT_WORKFLOW}" ||
+  fail "manual artifact workflow does not use the pinned artifact uploader"
+if grep -Eq 'calciumion/new-api|push:[[:space:]]*true|docker/login-action' "${MANUAL_ARTIFACT_WORKFLOW}"; then
+  fail "manual artifact workflow can publish to a registry"
 fi
 
 echo "KKAI manual production image policy passed"
