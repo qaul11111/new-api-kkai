@@ -7,6 +7,19 @@ Production images are built manually from a clean `production/kkrich` checkout
 with `scripts/kkai/build-manual-release.sh`. The script emits one Linux AMD64
 Docker archive and a metadata file under `.local-releases/`.
 
+The Bun and Go build stages use the native build platform and cross-compile the
+Go binaries for the requested target. Their pinned image references are
+multi-architecture manifest digests, so an Apple Silicon workstation does not
+run the Go compiler through user-mode AMD64 emulation. Dependency downloads
+remain serialized by default; a non-production cache warm-up may override
+`BUN_NETWORK_CONCURRENCY`, while the production script keeps the default of 1.
+
+The final FFmpeg/x264 source build executes target-architecture configure
+probes. A full production archive must therefore be built on a trusted native
+AMD64 builder. On Apple Silicon, `--target backend` is suitable for local Web
+and Go cross-build validation only; it is not a production image and must not
+be exported or staged as a release.
+
 There is no production-safe profile default for every live schema. Production
 commands must pass `--schema-contract` explicitly after the live schema has
 been established:

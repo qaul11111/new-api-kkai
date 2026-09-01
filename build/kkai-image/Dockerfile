@@ -1,9 +1,10 @@
 # syntax=docker/dockerfile:1.8@sha256:dde28735fbb848299b7a43b7561d828b89c76f84f745c31896a7a7efbf93851a
 
-ARG BUN_IMAGE=oven/bun:1.3.13@sha256:bb35eafd10b2e969809384850ff0474ba36a491239d715864bc87787b4cdf0a4
-ARG GO_IMAGE=golang:1.26.5-alpine@sha256:111d79159b2326f7e80c4a4706e1ba166acb0e2611df853955f3621828cd49e8
+ARG BUN_IMAGE=oven/bun:1.3.13@sha256:87416c977a612a204eb54ab9f3927023c2a3c971f4f345a01da08ea6262ae30e
+ARG GO_IMAGE=golang:1.26.5-alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2
 ARG BUSYBOX_IMAGE=busybox:1.37.0-musl@sha256:6be969a074d06073a62ad8ccfd2ad6ec2790cae25d519d8df255ba24819d96f0
 ARG DISTROLESS_IMAGE=gcr.io/distroless/static-debian12:nonroot@sha256:7a2bd171a18bdd39a4729600d0dca5f16e779d41156a6908b4f8a9a289e76d92
+ARG BUN_NETWORK_CONCURRENCY=1
 ARG KKAI_SCHEMA_CONTRACT=feature
 ARG FFMPEG_VERSION=7.1.1
 ARG FFMPEG_SOURCE_SHA256=0c8da2f11579a01e014fc007cbacf5bb4da1d06afd0b43c7f8097ec7c0f143ba
@@ -13,13 +14,15 @@ ARG VIDEO_MEDIA_SOURCE_DATE_EPOCH=1749399863
 ARG FFMPEG_BINARY_SHA256=d003df00d4930e60f5e534c07e12064ec0abd5677fc638fd7202edfb01f8bc3f
 ARG FFPROBE_BINARY_SHA256=4df45ffe1eb3ebed143136499616e894a06e6c0d3ccb3abf8e72f84bb1ac8c6e
 
-FROM ${BUN_IMAGE} AS web-deps
+FROM --platform=$BUILDPLATFORM ${BUN_IMAGE} AS web-deps
+ARG BUILDARCH
+ARG BUN_NETWORK_CONCURRENCY
 WORKDIR /build/web
 COPY web/package.json web/bun.lock ./
 COPY web/default/package.json ./default/package.json
 COPY web/classic/package.json ./classic/package.json
-RUN --mount=type=cache,id=kkai-newapi-bun-v1,target=/root/.bun/install/cache,sharing=locked \
-    bun install --frozen-lockfile --network-concurrency=1
+RUN --mount=type=cache,id=kkai-newapi-bun-v2-${BUILDARCH},target=/root/.bun/install/cache,sharing=locked \
+    bun install --frozen-lockfile --network-concurrency="${BUN_NETWORK_CONCURRENCY}"
 
 FROM web-deps AS web-default
 
@@ -38,7 +41,7 @@ RUN test -n "${APP_VERSION}" \
     && cd classic \
     && VITE_REACT_APP_VERSION="${APP_VERSION}" bun run build
 
-FROM ${GO_IMAGE} AS backend
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS backend
 
 ARG APP_VERSION
 ARG KKAI_SCHEMA_CONTRACT
@@ -76,9 +79,13 @@ RUN --mount=type=cache,id=kkai-newapi-go-mod-v1,target=/go/pkg/mod,sharing=locke
       -ldflags "-s -w -buildid= -X 'github.com/QuantumNous/new-api/common.SchemaManagementMode=external'" \
       -o /out/kkai-video-archive-once ./cmd/kkai-video-archive-once
 
-FROM ${GO_IMAGE} AS runtime-tools
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS runtime-tools
 
-ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
+ARG TARGETOS
+ARG TARGETARCH
+ENV CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH}
 WORKDIR /tools
 COPY --from=kkai_image go.mod go.sum ./
 RUN --mount=type=cache,id=kkai-newapi-go-mod-v1,target=/go/pkg/mod,sharing=locked \
