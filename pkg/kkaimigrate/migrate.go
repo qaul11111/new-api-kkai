@@ -296,6 +296,8 @@ func applyThroughMigrationSet(ctx context.Context, db *gorm.DB, options Options,
 
 // Check verifies that the database has every migration through minimumVersion
 // and that its migration history is within this runtime's compatibility range.
+// It is an explicit prefix check for staged maintenance; callers that need the
+// runtime's full startup requirement must use CheckRequired.
 func Check(ctx context.Context, db *gorm.DB, minimumVersion int64) error {
 	if db == nil {
 		return ErrSchemaNotReady
@@ -308,7 +310,7 @@ func Check(ctx context.Context, db *gorm.DB, minimumVersion int64) error {
 	if err != nil {
 		return err
 	}
-	return checkThroughVersion(ctx, db, minimumVersion, contract.MigrationTargetVersion, contract.RuntimeMaxVersion)
+	return checkThroughVersion(ctx, db, minimumVersion, minimumVersion, contract.RuntimeMaxVersion)
 }
 
 func CheckRequired(ctx context.Context, db *gorm.DB) error {

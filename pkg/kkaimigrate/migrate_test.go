@@ -259,6 +259,17 @@ func TestCheckRejectsMissingAndTamperedMigrations(t *testing.T) {
 	require.ErrorIs(t, Check(context.Background(), db, CurrentVersion), ErrChecksumMismatch)
 }
 
+func TestCheckAllowsExplicitStagedPrefixWithoutRelaxingRuntimeRequirement(t *testing.T) {
+	db := newMigrationTestDB(t)
+	_, err := applyThroughVersion(
+		context.Background(), db, Options{}, VideoStudioSchemaVersion, MaxCompatibleVersion,
+	)
+	require.NoError(t, err)
+
+	require.NoError(t, Check(context.Background(), db, VideoStudioSchemaVersion))
+	require.ErrorIs(t, CheckRequired(context.Background(), db), ErrSchemaNotReady)
+}
+
 func TestCheckRejectsUnknownFutureMigration(t *testing.T) {
 	db := newMigrationTestDB(t)
 	_, err := Apply(context.Background(), db, Options{})
