@@ -53,7 +53,7 @@ const classicFiles = changedFiles
   .map((path) => path.slice('web/classic/'.length))
 
 if (classicFiles.length > 0) {
-  const prettier = join(root, 'web/node_modules/.bin/prettier')
+  const prettier = join(root, 'web/classic/node_modules/.bin/prettier')
   const result = run(prettier, ['--check', ...classicFiles], {
     cwd: join(root, 'web/classic'),
   })
@@ -105,7 +105,7 @@ if (defaultFiles.length > 0) {
 
     const configPath = join(root, 'web/default/.oxfmtrc.json')
     copyFileSync(configPath, join(temporaryRoot, '.oxfmtrc.json'))
-    const oxfmt = join(root, 'web/node_modules/.bin/oxfmt')
+    const oxfmt = join(root, 'web/default/node_modules/.bin/oxfmt')
     const result = run(oxfmt, ['-c', '.oxfmtrc.json', '--write', '.'], {
       cwd: temporaryRoot,
     })
