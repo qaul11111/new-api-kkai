@@ -80,6 +80,18 @@ func TestValidateMainSchemaPrerequisitesRejectsMissingColumn(t *testing.T) {
 	require.ErrorContains(t, err, "channels.")
 }
 
+func TestValidateMainSchemaPrerequisitesAllowsAccountTypeBeforeV9(t *testing.T) {
+	db := newSchemaPrerequisiteTestDB(t)
+	require.NoError(t, db.Migrator().DropColumn(&User{}, "AccountType"))
+
+	require.NoError(t, ValidateMainSchemaPrerequisitesWithOptions(db, MainSchemaPrerequisiteOptions{
+		RequireAccountType: false,
+	}))
+	err := ValidateMainSchemaPrerequisites(db)
+	require.ErrorIs(t, err, ErrMainSchemaNotReady)
+	require.ErrorContains(t, err, "users.account_type")
+}
+
 func TestValidatePostgresApplicationColumnTypesRejectsLegacyTypes(t *testing.T) {
 	tests := []struct {
 		name    string

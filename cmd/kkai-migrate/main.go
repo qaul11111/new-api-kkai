@@ -168,7 +168,12 @@ func observeCurrentSchema(ctx context.Context, db *gorm.DB) (*kkaimigrate.Observ
 	if err != nil {
 		return nil, err
 	}
-	if err := model.ValidateMainSchemaPrerequisites(db.WithContext(ctx)); err != nil {
+	if err := model.ValidateMainSchemaPrerequisitesWithOptions(
+		db.WithContext(ctx),
+		model.MainSchemaPrerequisiteOptions{
+			RequireAccountType: observation.CurrentVersion >= kkaimigrate.AccountTypeSchemaVersion,
+		},
+	); err != nil {
 		return nil, err
 	}
 	return observation, nil

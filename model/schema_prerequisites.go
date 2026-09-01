@@ -10,6 +10,10 @@ import (
 
 var ErrMainSchemaNotReady = errors.New("main application schema is not ready")
 
+type MainSchemaPrerequisiteOptions struct {
+	RequireAccountType bool
+}
+
 func mainDatabaseAutoMigrateModels() []any {
 	return []any{
 		&Channel{},
@@ -46,6 +50,12 @@ func mainDatabaseAutoMigrateModels() []any {
 }
 
 func ValidateMainSchemaPrerequisites(db *gorm.DB) error {
+	return ValidateMainSchemaPrerequisitesWithOptions(db, MainSchemaPrerequisiteOptions{
+		RequireAccountType: true,
+	})
+}
+
+func ValidateMainSchemaPrerequisitesWithOptions(db *gorm.DB, options MainSchemaPrerequisiteOptions) error {
 	if db == nil {
 		return ErrMainSchemaNotReady
 	}
@@ -69,6 +79,9 @@ func ValidateMainSchemaPrerequisites(db *gorm.DB) error {
 		}
 		for _, field := range statement.Schema.Fields {
 			if field.IgnoreMigration || field.DBName == "" {
+				continue
+			}
+			if table == "users" && field.DBName == "account_type" && !options.RequireAccountType {
 				continue
 			}
 			if _, ok := actualColumns[field.DBName]; !ok {
