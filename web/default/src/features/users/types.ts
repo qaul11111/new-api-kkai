@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { z } from 'zod'
 
+import { ACCOUNT_TYPE_VALUES, type AccountType } from '@/lib/account-type'
 import type { AdminPermissionMatrix } from '@/lib/admin-permissions'
 
 // ============================================================================
@@ -46,6 +47,7 @@ export const userSchema = z.object({
   used_quota: z.number(),
   request_count: z.number(),
   group: z.string(),
+  account_type: z.enum(ACCOUNT_TYPE_VALUES).default('consumer'),
   aff_code: z.string().optional(),
   aff_count: z.number().optional(),
   aff_quota: z.number().optional(),
@@ -97,6 +99,7 @@ export interface GetUsersResponse {
 export interface SearchUsersParams {
   keyword?: string
   group?: string
+  account_type?: AccountType
   role?: string
   status?: string
   p?: number
@@ -108,6 +111,7 @@ export interface UserFormData {
   display_name: string
   password?: string
   role?: number // Only used when creating user
+  account_type?: AccountType
   quota?: number // Only used when updating user
   group?: string // Only used when updating user
   remark?: string // Only used when updating user

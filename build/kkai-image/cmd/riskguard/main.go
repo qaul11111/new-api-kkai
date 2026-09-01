@@ -9,7 +9,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Wangjunkai-1996/new-api-kkai/build/kkai-image/internal/riskguard"
+	"github.com/qaul11111/new-api-kkai/build/kkai-image/internal/riskguard"
 
 	"github.com/redis/go-redis/v9"
 )

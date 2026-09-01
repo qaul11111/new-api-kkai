@@ -65,6 +65,9 @@ func validateRuntimeSchema(db *gorm.DB, dialect string, currentVersion int64) er
 	if currentVersion >= AuthenticationSchemaVersion {
 		requirements = append(requirements, authenticationRuntimeSchemaRequirements...)
 	}
+	if currentVersion >= AccountTypeSchemaVersion {
+		requirements = append(requirements, accountTypeRuntimeSchemaRequirements...)
+	}
 	for _, requirement := range requirements {
 		if !db.Migrator().HasTable(requirement.Table) {
 			return fmt.Errorf("%w: missing runtime table %s", ErrSchemaNotReady, requirement.Table)
@@ -94,7 +97,12 @@ func validateRuntimeSchema(db *gorm.DB, dialect string, currentVersion int64) er
 		}
 	}
 	if currentVersion >= AuthenticationSchemaVersion {
-		return validateAuthenticationRuntimeSchema(db, dialect)
+		if err := validateAuthenticationRuntimeSchema(db, dialect); err != nil {
+			return err
+		}
+	}
+	if currentVersion >= AccountTypeSchemaVersion {
+		return validateAccountTypeRuntimeSchema(db)
 	}
 	return nil
 }

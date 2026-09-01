@@ -1,3 +1,4 @@
+import type { AccountType } from '@/lib/account-type'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -87,17 +88,26 @@ export async function githubOAuthStart(clientId: string, state: string) {
 }
 
 // Get OAuth state for CSRF protection
-export async function getOAuthState(): Promise<string> {
+export async function getOAuthState(
+  accountType?: AccountType
+): Promise<string> {
   const aff =
     typeof window !== 'undefined' ? (localStorage.getItem('aff') ?? '') : ''
-  const res = await api.get('/api/oauth/state', { params: { aff } })
+  const res = await api.get('/api/oauth/state', {
+    params: { aff, account_type: accountType },
+  })
   if (res.data?.success) return res.data.data
   return ''
 }
 
 // WeChat login by authorization code
-export async function wechatLoginByCode(code: string): Promise<ApiResponse> {
-  const res = await api.get('/api/oauth/wechat', { params: { code } })
+export async function wechatLoginByCode(
+  code: string,
+  accountType?: AccountType
+): Promise<ApiResponse> {
+  const res = await api.get('/api/oauth/wechat', {
+    params: { code, account_type: accountType },
+  })
   return res.data
 }
 

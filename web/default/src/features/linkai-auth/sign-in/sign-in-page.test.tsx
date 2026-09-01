@@ -154,7 +154,7 @@ describe('LinkAI sign-in page', () => {
   test('renders no provider buttons when nothing is configured', () => {
     setStatus({ password_login_enabled: true })
 
-    render(<LinkAiSignInPage />)
+    const { container } = render(<LinkAiSignInPage />)
 
     expect(
       screen.queryByRole('button', { name: 'Continue with GitHub' })
@@ -165,6 +165,7 @@ describe('LinkAI sign-in page', () => {
     // Password form stays available
     expect(screen.getByLabelText('Enter email address')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(container.querySelector('form')?.parentElement).toHaveClass('mt-6')
   })
 
   test('hides the password form when password login is disabled', () => {

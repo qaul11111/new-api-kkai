@@ -141,7 +141,7 @@ ARG FFMPEG_BINARY_SHA256
 ARG FFPROBE_BINARY_SHA256
 LABEL org.opencontainers.image.title="KKAI New API" \
       org.opencontainers.image.description="KKAI production New API image" \
-      org.opencontainers.image.source="https://github.com/Wangjunkai-1996/new-api-kkai" \
+      org.opencontainers.image.source="https://github.com/qaul11111/new-api-kkai" \
       org.opencontainers.image.version="${APP_VERSION}" \
       org.opencontainers.image.revision="${SOURCE_REVISION}" \
       org.opencontainers.image.licenses="AGPL-3.0 AND GPL-3.0-or-later" \

@@ -31,6 +31,7 @@ const (
 	VideoSampleCategorySchemaVersion int64 = 6
 	ImageStudioSchemaVersion         int64 = 7
 	AuthenticationSchemaVersion      int64 = 8
+	AccountTypeSchemaVersion         int64 = 9
 )
 
 var (
@@ -191,6 +192,21 @@ func ApplyAuthenticationExpand(ctx context.Context, db *gorm.DB, options Options
 		)
 	}
 	return applyThroughVersion(ctx, db, options, AuthenticationSchemaVersion, MaxCompatibleVersion)
+}
+
+// ApplyAccountTypeExpand adds the durable B/C account classification after
+// the complete v8 authentication schema has been validated.
+func ApplyAccountTypeExpand(ctx context.Context, db *gorm.DB, options Options) (*Result, error) {
+	if db == nil {
+		return nil, ErrSchemaNotReady
+	}
+	if err := checkThroughVersion(ctx, db, AuthenticationSchemaVersion, AuthenticationSchemaVersion, MaxCompatibleVersion); err != nil {
+		return nil, fmt.Errorf(
+			"KKAI maintenance target %d requires validated authentication schema %d: %w",
+			AccountTypeSchemaVersion, AuthenticationSchemaVersion, err,
+		)
+	}
+	return applyThroughVersion(ctx, db, options, AccountTypeSchemaVersion, MaxCompatibleVersion)
 }
 
 func applyThroughVersion(ctx context.Context, db *gorm.DB, options Options, currentVersion int64, compatibleVersion int64) (*Result, error) {

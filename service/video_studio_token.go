@@ -330,7 +330,7 @@ func legacyVideoStudioProfileSnapshot(ctx context.Context, db *gorm.DB) ([]strin
 func getCurrentVideoStudioUser(ctx context.Context, db *gorm.DB, userID int) (*model.User, error) {
 	var user model.User
 	err := db.WithContext(ctx).
-		Select("id", "group", "status").
+		Select("id", "group", "account_type", "status").
 		First(&user, "id = ?", userID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -342,11 +342,11 @@ func getCurrentVideoStudioUser(ctx context.Context, db *gorm.DB, userID int) (*m
 }
 
 func videoStudioUserCanUseGroup(user *model.User) bool {
-	return user != nil && user.Status == common.UserStatusEnabled && videoStudioTokenGroupAvailable(user.Group)
-}
-
-func videoStudioTokenGroupAvailable(userGroup string) bool {
-	return GroupInUserUsableGroups(strings.TrimSpace(userGroup), VideoStudioTokenGroup) &&
+	return user != nil && user.Status == common.UserStatusEnabled &&
+		GroupInUserUsableGroupsForProfile(UserAccessProfile{
+			UserGroup:   strings.TrimSpace(user.Group),
+			AccountType: user.AccountType,
+		}, VideoStudioTokenGroup) &&
 		ratio_setting.ContainsGroupRatio(VideoStudioTokenGroup)
 }
 

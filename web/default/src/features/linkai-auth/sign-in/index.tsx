@@ -110,7 +110,14 @@ export function LinkAiSignInPage() {
           </div>
         )}
 
-        {state.passwordLoginEnabled && <LinkAiSignInForm state={state} />}
+        {state.passwordLoginEnabled && (
+          <div
+            data-linkai-auth-password-section
+            className={showDivider ? undefined : 'mt-6'}
+          >
+            <LinkAiSignInForm state={state} />
+          </div>
+        )}
 
         <div
           data-linkai-auth-footer

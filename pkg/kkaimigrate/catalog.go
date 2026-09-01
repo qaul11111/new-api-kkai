@@ -78,6 +78,17 @@ func migrationSet() []migration {
 			BackfillID:       "backfill_stateless_authentication_v3",
 			Backfill:         backfillAuthenticationSchema,
 		},
+		{
+			Version:          9,
+			Name:             "user_account_type",
+			Kind:             MigrationKindExpand,
+			ImplementationID: "user_account_type_v1",
+			ChecksumVersion:  migrationChecksumSchemaBackfill,
+			Statements:       accountTypeSchemaStatements,
+			BackfillSpec:     "add users.account_type as a nullable column, then classify every legacy or empty value as consumer; reject unknown persisted values at runtime",
+			BackfillID:       "backfill_user_account_type_v1",
+			Backfill:         backfillAccountTypeSchema,
+		},
 	}
 }
 

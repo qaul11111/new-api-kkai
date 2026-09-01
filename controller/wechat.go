@@ -61,6 +61,14 @@ func WeChatAuth(c *gin.Context) {
 		return
 	}
 	code := c.Query("code")
+	accountType, validAccountType := common.NormalizeAccountType(c.Query("account_type"))
+	if !validAccountType {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "无效的账号类型",
+			"success": false,
+		})
+		return
+	}
 	wechatId, err := getWeChatIdByCode(code)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
@@ -94,6 +102,7 @@ func WeChatAuth(c *gin.Context) {
 			user.DisplayName = "WeChat User"
 			user.Role = common.RoleCommonUser
 			user.Status = common.UserStatusEnabled
+			user.AccountType = accountType
 
 			if err := user.Insert(0); err != nil {
 				c.JSON(http.StatusOK, gin.H{

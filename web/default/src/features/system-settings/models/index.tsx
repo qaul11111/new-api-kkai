@@ -58,6 +58,8 @@ const defaultModelSettings: ModelSettings = {
   TopupGroupRatio: '',
   GroupRatio: '',
   UserUsableGroups: '',
+  AccountTypeGroupMapping: '{"consumer":{},"business":{}}',
+  AccountTypeSegmentationEnabled: false,
   GroupGroupRatio: '',
   AutoGroups: '',
   DefaultUseAutoGroup: false,

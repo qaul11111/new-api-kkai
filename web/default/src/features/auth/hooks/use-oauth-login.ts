@@ -21,6 +21,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
+import type { AccountType } from '@/lib/account-type'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -45,7 +46,10 @@ type LogoutRequestConfig = AxiosRequestConfig & {
 /**
  * Hook for managing OAuth login
  */
-export function useOAuthLogin(status: SystemStatus | null) {
+export function useOAuthLogin(
+  status: SystemStatus | null,
+  options?: { accountType?: AccountType }
+) {
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [isTelegramLoading, setIsTelegramLoading] = useState(false)
@@ -104,7 +108,7 @@ export function useOAuthLogin(status: SystemStatus | null) {
 
     try {
       await resetSession()
-      const state = await getOAuthState()
+      const state = await getOAuthState(options?.accountType)
       if (!state) {
         toast.error(t('Failed to initialize OAuth'))
         if (githubTimeoutRef.current) {
@@ -135,7 +139,7 @@ export function useOAuthLogin(status: SystemStatus | null) {
     setIsLoading(true)
     try {
       await resetSession()
-      const state = await getOAuthState()
+      const state = await getOAuthState(options?.accountType)
       if (!state) {
         toast.error(t('Failed to initialize OAuth'))
         return
@@ -156,7 +160,7 @@ export function useOAuthLogin(status: SystemStatus | null) {
     setIsLoading(true)
     try {
       await resetSession()
-      const state = await getOAuthState()
+      const state = await getOAuthState(options?.accountType)
       if (!state) {
         toast.error(t('Failed to initialize OAuth'))
         return
@@ -181,7 +185,7 @@ export function useOAuthLogin(status: SystemStatus | null) {
     setIsLoading(true)
     try {
       await resetSession()
-      const state = await getOAuthState()
+      const state = await getOAuthState(options?.accountType)
       if (!state) {
         toast.error(t('Failed to initialize OAuth'))
         return
@@ -230,7 +234,7 @@ export function useOAuthLogin(status: SystemStatus | null) {
     setIsLoading(true)
     try {
       await resetSession()
-      const state = await getOAuthState()
+      const state = await getOAuthState(options?.accountType)
       if (!state) {
         toast.error(t('Failed to initialize OAuth'))
         return

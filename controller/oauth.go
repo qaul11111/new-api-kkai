@@ -15,6 +15,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const oauthAccountTypeSessionKey = "oauth_account_type"
+
 // providerParams returns map with Provider key for i18n templates
 func providerParams(name string) map[string]any {
 	return map[string]any{"Provider": name}
@@ -24,10 +26,16 @@ func providerParams(name string) map[string]any {
 func GenerateOAuthCode(c *gin.Context) {
 	session := sessions.Default(c)
 	state := common.GetRandomString(12)
+	accountType, valid := common.NormalizeAccountType(c.Query("account_type"))
+	if !valid {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
 	affCode := c.Query("aff")
 	if affCode != "" {
 		session.Set("aff", affCode)
 	}
+	session.Set(oauthAccountTypeSessionKey, accountType)
 	session.Set("oauth_state", state)
 	err := session.Save()
 	if err != nil {
@@ -64,6 +72,12 @@ func HandleOAuth(c *gin.Context) {
 		})
 		return
 	}
+	defer func() {
+		session.Delete(oauthAccountTypeSessionKey)
+		if err := session.Save(); err != nil {
+			common.SysLog("failed to clear OAuth account type session: " + err.Error())
+		}
+	}()
 
 	// 2. Check if user is already logged in (bind flow)
 	username := session.Get("username")
@@ -270,6 +284,7 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	}
 	user.Role = common.RoleCommonUser
 	user.Status = common.UserStatusEnabled
+	user.AccountType = oauthRegistrationAccountType(session)
 
 	// Handle affiliate code
 	affCode := session.Get("aff")
@@ -337,6 +352,14 @@ func findOrCreateOAuthUser(c *gin.Context, provider oauth.Provider, oauthUser *o
 	}
 
 	return user, nil
+}
+
+func oauthRegistrationAccountType(session sessions.Session) string {
+	value, ok := session.Get(oauthAccountTypeSessionKey).(string)
+	if !ok {
+		return common.AccountTypeConsumer
+	}
+	return common.EffectiveAccountType(value)
 }
 
 // Error types for OAuth

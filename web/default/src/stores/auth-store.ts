@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { create } from 'zustand'
 
+import type { AccountType } from '@/lib/account-type'
 import type { AdminCapabilities } from '@/lib/admin-permissions'
 
 export type UserPermissions = {
@@ -34,6 +35,7 @@ export interface AuthUser {
   role: number
   status?: number
   group?: string
+  account_type?: AccountType
   quota?: number
   used_quota?: number
   request_count?: number

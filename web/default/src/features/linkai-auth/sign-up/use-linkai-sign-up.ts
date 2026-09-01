@@ -36,13 +36,17 @@ import {
 } from '@/features/auth/lib/storage'
 import type { TelegramAuthPayload } from '@/features/auth/types'
 import { useStatus } from '@/hooks/use-status'
+import { ACCOUNT_TYPE, type AccountType } from '@/lib/account-type'
 
 export type LinkAiSignUpFields = z.infer<typeof registerFormSchema>
 
-export function useLinkAiSignUp() {
+export function useLinkAiSignUp(initialAccountType?: AccountType) {
   const { t } = useTranslation()
   const { status } = useStatus()
-  const oauth = useOAuthLogin(status)
+  const [accountType, setAccountType] = useState<AccountType>(
+    initialAccountType ?? ACCOUNT_TYPE.CONSUMER
+  )
+  const oauth = useOAuthLogin(status, { accountType })
   const { redirectToLogin, handleLoginSuccess } = useAuthRedirect()
   const [isLoading, setIsLoading] = useState(false)
   const [agreedToLegal, setAgreedToLegal] = useState(false)
@@ -125,7 +129,7 @@ export function useLinkAiSignUp() {
     weChatSubmittingRef.current = true
     setIsWeChatSubmitting(true)
     try {
-      const res = await wechatLoginByCode(code)
+      const res = await wechatLoginByCode(code, accountType)
       if (res?.success) {
         await handleLoginSuccess(res.data as { id?: number } | null)
         toast.success(t('Signed in via WeChat'))
@@ -178,6 +182,7 @@ export function useLinkAiSignUp() {
           ? verificationCode || undefined
           : undefined,
         aff_code: getAffiliateCode(),
+        account_type: accountType,
         turnstile: submittedTurnstileToken,
       })
       if (response?.success) {
@@ -192,6 +197,7 @@ export function useLinkAiSignUp() {
   }
 
   return {
+    accountType,
     agreedToLegal,
     email,
     emailVerification,
@@ -212,6 +218,7 @@ export function useLinkAiSignUp() {
     registerEnabled,
     requiresLegalConsent,
     setAgreedToLegal,
+    setAccountType,
     setIsWeChatDialogOpen,
     setVerificationCode,
     status,

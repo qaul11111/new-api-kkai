@@ -143,8 +143,30 @@ describe('LinkAI sign-up page', () => {
     const payload = mockedRegister.mock.calls[0][0]
     expect(payload.username).toBe('alice')
     expect(payload.password).toBe('password123')
+    expect(payload.account_type).toBe('consumer')
     expect(payload.email).toBeUndefined()
     expect(payload.verification_code).toBeUndefined()
+  })
+
+  test('honors the B-side route default and submits the selected account type', async () => {
+    setStatus({ email_verification: false })
+    mockedRegister.mockResolvedValue({ success: true, message: '' })
+    const user = userEvent.setup()
+
+    render(<LinkAiSignUpPage initialAccountType='business' />)
+
+    expect(
+      screen.getByRole('radio', { name: /Business account/ })
+    ).toHaveAttribute('aria-checked', 'true')
+    expect(
+      screen.getByRole('radio', { name: /Personal account/ })
+    ).toHaveAttribute('aria-checked', 'false')
+
+    await fillPasswordForm(user)
+    await user.click(screen.getByRole('button', { name: 'Create account' }))
+
+    await waitFor(() => expect(mockedRegister).toHaveBeenCalledTimes(1))
+    expect(mockedRegister.mock.calls[0][0].account_type).toBe('business')
   })
 
   test('requires email and verification code when email verification is on', async () => {
@@ -201,7 +223,7 @@ describe('LinkAI sign-up page', () => {
   test('hides OAuth providers when OAuth registration is disabled', () => {
     setStatus({ oauth_register_enabled: false, github_oauth: true })
 
-    render(<LinkAiSignUpPage />)
+    const { container } = render(<LinkAiSignUpPage />)
 
     expect(
       screen.queryByRole('button', { name: 'Continue with GitHub' })
@@ -209,6 +231,7 @@ describe('LinkAI sign-up page', () => {
     expect(
       screen.getByRole('button', { name: 'Create account' })
     ).toBeInTheDocument()
+    expect(container.querySelector('form')?.parentElement).toHaveClass('mt-6')
   })
 
   test('hides the password form when password registration is disabled', () => {

@@ -1,3 +1,4 @@
+import type { AccountType } from '@/lib/account-type'
 /*
 Copyright (C) 2023-2026 QuantumNous
 
@@ -55,6 +56,7 @@ export async function searchUsers(
   const {
     keyword = '',
     group = '',
+    account_type,
     role = '',
     status = '',
     p = 1,
@@ -63,6 +65,7 @@ export async function searchUsers(
   const queryParams = new URLSearchParams()
   queryParams.set('keyword', keyword)
   queryParams.set('group', group)
+  if (account_type) queryParams.set('account_type', account_type)
   if (role) queryParams.set('role', role)
   if (status) queryParams.set('status', status)
   queryParams.set('p', String(p))
@@ -96,6 +99,16 @@ export async function updateUser(
   data: UserFormData & { id: number }
 ): Promise<ApiResponse<Partial<User>>> {
   const res = await api.put('/api/user/', data)
+  return res.data
+}
+
+export async function updateUserAccountType(
+  id: number,
+  accountType: AccountType
+): Promise<ApiResponse<{ id: number; account_type: AccountType }>> {
+  const res = await api.put(`/api/user/${id}/account-type`, {
+    account_type: accountType,
+  })
   return res.data
 }
 
