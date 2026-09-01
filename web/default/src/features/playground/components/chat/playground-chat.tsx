@@ -60,6 +60,7 @@ interface PlaygroundChatProps {
   onCancelEdit?: (open: boolean) => void
   onSaveEditAndSubmit?: (newContent: string) => void
   messageLayoutMode?: PlaygroundMessageLayoutMode
+  sourceView?: boolean
 }
 
 export function PlaygroundChat({
@@ -76,6 +77,7 @@ export function PlaygroundChat({
   onCancelEdit,
   onSaveEditAndSubmit,
   messageLayoutMode = 'alternating',
+  sourceView = false,
 }: PlaygroundChatProps) {
   const { t } = useTranslation()
   const [editText, setEditText] = useState('')
@@ -125,7 +127,7 @@ export function PlaygroundChat({
       ? getPreviousUserMessage(messages, messageIndex)
       : null
     const alignment = getMessageAlignment(message, messageLayoutMode)
-    const isSourceVisible = sourceMessageKeys.has(message.key)
+    const isSourceVisible = sourceView || sourceMessageKeys.has(message.key)
 
     return (
       <Message
@@ -152,7 +154,9 @@ export function PlaygroundChat({
                   message={message}
                   onCopy={onCopyMessage}
                   onRegenerate={onRegenerateMessage}
-                  onToggleSource={handleToggleMessageSource}
+                  onToggleSource={
+                    sourceView ? undefined : handleToggleMessageSource
+                  }
                   onEdit={onEditMessage}
                   onDelete={onDeleteMessage}
                   isSourceVisible={isSourceVisible}
@@ -212,12 +216,13 @@ export function PlaygroundChat({
   }
 
   return (
-    <Conversation>
-      {/* Remove outer padding; apply padding to inner centered container to align with input */}
+    <Conversation className='bg-black'>
       <ConversationContent className='p-0'>
-        <div className='mx-auto w-full max-w-4xl px-4 py-4'>{chatContent}</div>
+        <div className='mx-auto w-full max-w-[72.25rem] px-4 py-5 sm:px-6 sm:py-7'>
+          {chatContent}
+        </div>
       </ConversationContent>
-      <ConversationScrollButton />
+      <ConversationScrollButton className='border-[#343434] bg-[#171717] text-[#eeeeee] hover:bg-[#262626]' />
     </Conversation>
   )
 }

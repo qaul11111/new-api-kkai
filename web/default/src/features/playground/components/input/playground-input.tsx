@@ -93,10 +93,10 @@ export function PlaygroundInput({
   }
 
   return (
-    <div className='grid shrink-0 gap-4 px-1 md:pb-4'>
+    <div className='grid shrink-0'>
       <PromptInput
         className='relative'
-        groupClassName='bg-background/95 dark:bg-background/80 border-border/70 shadow-[0_18px_60px_-32px_rgba(0,0,0,0.65)] ring-1 ring-foreground/5 rounded-xl overflow-hidden transition-all duration-200 focus-within:border-primary/45 focus-within:ring-primary/15 focus-within:shadow-[0_22px_70px_-34px_rgba(0,0,0,0.75)]'
+        groupClassName='min-h-[8.5rem] overflow-hidden rounded-[24px] border-2 border-[#343434] bg-[#0f0f0f] shadow-none ring-0 transition-colors focus-within:border-white/35 focus-within:ring-0 md:min-h-[9.25rem]'
         onSubmit={handleSubmit}
       >
         <PromptInputTextarea
@@ -104,14 +104,16 @@ export function PlaygroundInput({
           autoCorrect='off'
           autoCapitalize='off'
           spellCheck={false}
-          className='min-h-20 px-5 pt-4 pb-3 leading-7 md:min-h-24 md:text-base'
+          className='min-h-[4.75rem] px-5 pt-4 pb-2 text-sm leading-6 text-[#eeeeee] placeholder:text-[#9b9b9b] focus-visible:ring-0 md:min-h-[5.5rem] md:px-8 md:pt-5 md:text-base'
           disabled={disabled}
           onChange={(event) => setText(event.target.value)}
-          placeholder={t('Ask anything')}
+          placeholder={t(
+            'Type a message. Enter to send / Shift+Enter for a new line'
+          )}
           value={text}
         />
 
-        <PromptInputFooter className='border-border/60 bg-muted/20 dark:bg-muted/10 border-t px-3 py-2.5 backdrop-blur'>
+        <PromptInputFooter className='border-0 bg-transparent px-3 pt-0.5 pb-2.5 md:px-5 md:pb-3'>
           <PlaygroundInputControls
             disabled={disabled}
             groups={groups}

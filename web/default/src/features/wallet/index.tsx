@@ -29,6 +29,7 @@ import { BillingHistoryDialog } from './components/dialogs/billing-history-dialo
 import { CreemConfirmDialog } from './components/dialogs/creem-confirm-dialog'
 import { PaymentConfirmDialog } from './components/dialogs/payment-confirm-dialog'
 import { TransferDialog } from './components/dialogs/transfer-dialog'
+import { LinkAiWalletOrdersCard } from './components/linkai-wallet-orders-card'
 import { RechargeFormCard } from './components/recharge-form-card'
 import { SubscriptionPlansCard } from './components/subscription-plans-card'
 import { WalletStatsCard } from './components/wallet-stats-card'
@@ -57,6 +58,7 @@ import type {
 
 interface WalletProps {
   initialShowHistory?: boolean
+  variant?: 'default' | 'linkai'
 }
 
 export function Wallet(props: WalletProps) {
@@ -126,11 +128,13 @@ export function Wallet(props: WalletProps) {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUser()
   }, [fetchUser])
 
   useEffect(() => {
     if (props.initialShowHistory) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBillingDialogOpen(true)
       window.history.replaceState({}, '', window.location.pathname)
     }
@@ -282,75 +286,124 @@ export function Wallet(props: WalletProps) {
     []
   )
 
+  const rechargeCard = (
+    <RechargeFormCard
+      variant={props.variant}
+      topupInfo={topupInfo}
+      presetAmounts={presetAmounts}
+      selectedPreset={selectedPreset}
+      onSelectPreset={handleSelectPreset}
+      topupAmount={topupAmount}
+      onTopupAmountChange={handleTopupAmountChange}
+      paymentAmount={paymentAmount}
+      calculating={calculating}
+      onPaymentMethodSelect={handlePaymentMethodSelect}
+      paymentLoading={paymentLoading}
+      redemptionCode={redemptionCode}
+      onRedemptionCodeChange={setRedemptionCode}
+      onRedeem={handleRedeem}
+      redeeming={redeeming}
+      topupLink={topupInfo?.topup_link}
+      loading={topupLoading}
+      priceRatio={(status?.price as number) || 1}
+      usdExchangeRate={effectiveUsdExchangeRate}
+      onOpenBilling={() => setBillingDialogOpen(true)}
+      creemProducts={topupInfo?.creem_products}
+      enableCreemTopup={topupInfo?.enable_creem_topup}
+      onCreemProductSelect={handleCreemProductSelect}
+      enableWaffoTopup={topupInfo?.enable_waffo_topup}
+      waffoPayMethods={topupInfo?.waffo_pay_methods}
+      waffoMinTopup={topupInfo?.waffo_min_topup}
+      onWaffoMethodSelect={handleWaffoMethodSelect}
+      enableWaffoPancakeTopup={topupInfo?.enable_waffo_pancake_topup}
+    />
+  )
+
+  const subscriptionCard = (
+    <SubscriptionPlansCard
+      topupInfo={topupInfo}
+      onAvailabilityChange={handleSubscriptionAvailabilityChange}
+      userQuota={user?.quota}
+      onPurchaseSuccess={fetchUser}
+    />
+  )
+
+  const rewardsCard = (
+    <KkaiWalletRewardsCard
+      variant={props.variant}
+      user={user}
+      affiliateLink={affiliateLink}
+      onTransfer={() => setTransferDialogOpen(true)}
+      complianceConfirmed={topupInfo?.payment_compliance_confirmed !== false}
+      loading={affiliateLoading}
+    />
+  )
+
+  const walletContent =
+    props.variant === 'linkai' ? (
+      <div className='linkai-wallet-body'>
+        <WalletStatsCard user={user} loading={userLoading} variant='linkai' />
+
+        <div className='linkai-wallet-main-grid'>
+          <section
+            id='wallet-add-funds'
+            className='linkai-wallet-recharge-section scroll-mt-4'
+          >
+            <h2>{t('Recharge')}</h2>
+            {rechargeCard}
+          </section>
+
+          <aside className='linkai-wallet-side-column'>
+            <section className='linkai-wallet-orders-section'>
+              <h2>{t('Order History')}</h2>
+              <LinkAiWalletOrdersCard
+                onOpenBilling={() => setBillingDialogOpen(true)}
+              />
+            </section>
+            <div className='linkai-wallet-rewards-section'>{rewardsCard}</div>
+          </aside>
+        </div>
+
+        <section className='linkai-wallet-subscription-section'>
+          {subscriptionCard}
+        </section>
+      </div>
+    ) : (
+      <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
+        <WalletStatsCard user={user} loading={userLoading} />
+
+        <div
+          className={
+            showSubscriptionPanel
+              ? 'grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] xl:items-start'
+              : 'grid gap-4'
+          }
+        >
+          <div id='wallet-add-funds' className='scroll-mt-4'>
+            {rechargeCard}
+          </div>
+          {subscriptionCard}
+        </div>
+
+        {rewardsCard}
+      </div>
+    )
+
   return (
     <>
-      <SectionPageLayout>
-        <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
-        <SectionPageLayout.Content>
-          <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
-            <WalletStatsCard user={user} loading={userLoading} />
-
-            <div
-              className={
-                showSubscriptionPanel
-                  ? 'grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)] xl:items-start'
-                  : 'grid gap-4'
-              }
-            >
-              <div id='wallet-add-funds' className='scroll-mt-4'>
-                <RechargeFormCard
-                  topupInfo={topupInfo}
-                  presetAmounts={presetAmounts}
-                  selectedPreset={selectedPreset}
-                  onSelectPreset={handleSelectPreset}
-                  topupAmount={topupAmount}
-                  onTopupAmountChange={handleTopupAmountChange}
-                  paymentAmount={paymentAmount}
-                  calculating={calculating}
-                  onPaymentMethodSelect={handlePaymentMethodSelect}
-                  paymentLoading={paymentLoading}
-                  redemptionCode={redemptionCode}
-                  onRedemptionCodeChange={setRedemptionCode}
-                  onRedeem={handleRedeem}
-                  redeeming={redeeming}
-                  topupLink={topupInfo?.topup_link}
-                  loading={topupLoading}
-                  priceRatio={(status?.price as number) || 1}
-                  usdExchangeRate={effectiveUsdExchangeRate}
-                  onOpenBilling={() => setBillingDialogOpen(true)}
-                  creemProducts={topupInfo?.creem_products}
-                  enableCreemTopup={topupInfo?.enable_creem_topup}
-                  onCreemProductSelect={handleCreemProductSelect}
-                  enableWaffoTopup={topupInfo?.enable_waffo_topup}
-                  waffoPayMethods={topupInfo?.waffo_pay_methods}
-                  waffoMinTopup={topupInfo?.waffo_min_topup}
-                  onWaffoMethodSelect={handleWaffoMethodSelect}
-                  enableWaffoPancakeTopup={
-                    topupInfo?.enable_waffo_pancake_topup
-                  }
-                />
-              </div>
-
-              <SubscriptionPlansCard
-                topupInfo={topupInfo}
-                onAvailabilityChange={handleSubscriptionAvailabilityChange}
-                userQuota={user?.quota}
-                onPurchaseSuccess={fetchUser}
-              />
-            </div>
-
-            <KkaiWalletRewardsCard
-              user={user}
-              affiliateLink={affiliateLink}
-              onTransfer={() => setTransferDialogOpen(true)}
-              complianceConfirmed={
-                topupInfo?.payment_compliance_confirmed !== false
-              }
-              loading={affiliateLoading}
-            />
+      {props.variant === 'linkai' ? (
+        <main className='linkai-console-wallet min-h-0 flex-1 overflow-y-auto bg-black'>
+          <div className='linkai-wallet-page-content'>
+            <h1 className='linkai-wallet-heading'>{t('Wallet')}</h1>
+            {walletContent}
           </div>
-        </SectionPageLayout.Content>
-      </SectionPageLayout>
+        </main>
+      ) : (
+        <SectionPageLayout>
+          <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
+          <SectionPageLayout.Content>{walletContent}</SectionPageLayout.Content>
+        </SectionPageLayout>
+      )}
 
       <PaymentConfirmDialog
         open={confirmDialogOpen}

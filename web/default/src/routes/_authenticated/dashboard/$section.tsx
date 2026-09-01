@@ -18,11 +18,14 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { Dashboard } from '@/features/dashboard'
 import {
   DASHBOARD_SECTION_IDS,
   DASHBOARD_DEFAULT_SECTION,
+  isAdminOnlyDashboardSection,
 } from '@/features/dashboard/section-registry'
+import { LinkAiDashboard } from '@/features/linkai-console/dashboard'
+import { ROLE } from '@/lib/roles'
+import { useAuthStore } from '@/stores/auth-store'
 
 export const Route = createFileRoute('/_authenticated/dashboard/$section')({
   beforeLoad: ({ params }) => {
@@ -33,6 +36,16 @@ export const Route = createFileRoute('/_authenticated/dashboard/$section')({
         params: { section: DASHBOARD_DEFAULT_SECTION },
       })
     }
+    // Admin-only sections are declared in the dashboard section registry
+    // (`adminOnly: true`); e.g. `users` queries the admin-only
+    // `/api/data/users` endpoint. Enforce the registry predicate here,
+    // before the component mounts, instead of only hiding the tab.
+    if (isAdminOnlyDashboardSection(params.section)) {
+      const { auth } = useAuthStore.getState()
+      if (!auth.user || auth.user.role < ROLE.ADMIN) {
+        throw redirect({ to: '/403' })
+      }
+    }
   },
-  component: Dashboard,
+  component: LinkAiDashboard,
 })

@@ -38,19 +38,28 @@ import {
   Users,
   Wallet,
 } from 'lucide-react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type { SidebarData } from '@/components/layout/types'
+import type { NavGroup, SidebarData } from '@/components/layout/types'
 import { useImageStudioAccess } from '@/features/image-studio/hooks/use-image-studio-access'
 import { useInvitationFeatureStatus } from '@/features/invitations/hooks/use-invitation-feature-status'
 import { useVideoStudioAccess } from '@/features/video-studio/hooks/use-video-studio-access'
 import { ROLE } from '@/lib/roles'
+
+import { useSidebarConfig } from './use-sidebar-config'
 
 /**
  * Root navigation groups for the application sidebar.
  *
  * These are shown when the URL does not match any nested sidebar view
  * registered in `layout/lib/sidebar-view-registry.ts`.
+ *
+ * The groups are returned already narrowed by `useSidebarConfig`
+ * (admin × user sidebar_modules overlay plus the legacy enable_drawing /
+ * enable_task flags) so every consumer — sidebar, command menu, profile
+ * dropdown — observes the same visibility. Role-based narrowing stays in
+ * `use-sidebar-view.ts`.
  */
 export function useSidebarData(): SidebarData {
   const { t } = useTranslation()
@@ -58,8 +67,8 @@ export function useSidebarData(): SidebarData {
   const imageStudio = useImageStudioAccess()
   const videoStudio = useVideoStudioAccess()
 
-  return {
-    navGroups: [
+  const navGroups = useMemo<NavGroup[]>(
+    () => [
       {
         id: 'chat',
         title: t('Chat'),
@@ -213,5 +222,17 @@ export function useSidebarData(): SidebarData {
         ],
       },
     ],
-  }
+    [
+      t,
+      invitationFeature.userVisible,
+      invitationFeature.adminVisible,
+      imageStudio.available,
+      videoStudio.available,
+    ]
+  )
+
+  // Narrow with the shared module/flag config here (rather than in each
+  // consumer) so the sidebar, command menu, and any other navigation
+  // surface built from this data all hide the same entries.
+  return { navGroups: useSidebarConfig(navGroups) }
 }

@@ -27,7 +27,6 @@ import { ErrorState } from '@/components/error-state'
 import { SectionPageLayout } from '@/components/layout'
 import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { ButtonGroup } from '@/components/ui/button-group'
 import { cn } from '@/lib/utils'
 
 import { getGroupStatus } from './api'
@@ -65,10 +64,14 @@ export function GroupStatusPage() {
   )
 
   return (
-    <SectionPageLayout>
+    <SectionPageLayout className='linkai-group-status-page'>
       <SectionPageLayout.Title>{t('Group Status')}</SectionPageLayout.Title>
       <SectionPageLayout.Actions>
-        <ButtonGroup aria-label={t('Status window')}>
+        <div
+          role='group'
+          aria-label={t('Status window')}
+          className='linkai-group-status-window'
+        >
           {WINDOW_OPTIONS.map((option) => (
             <Button
               key={option.value}
@@ -81,7 +84,7 @@ export function GroupStatusPage() {
               {t(option.labelKey)}
             </Button>
           ))}
-        </ButtonGroup>
+        </div>
         <Button
           type='button'
           size='icon-sm'
@@ -95,7 +98,7 @@ export function GroupStatusPage() {
         </Button>
       </SectionPageLayout.Actions>
       <SectionPageLayout.Content>
-        <div className='space-y-4'>
+        <div className='linkai-group-status-stack space-y-4'>
           {query.isError && query.data && (
             <Alert variant='destructive'>
               <AlertTriangle aria-hidden='true' />

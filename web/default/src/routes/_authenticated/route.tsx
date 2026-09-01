@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { AuthenticatedLayout } from '@/components/layout'
+import { LinkAiAuthenticatedLayout } from '@/features/linkai-console'
 import { getSelf } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -59,5 +59,5 @@ export const Route = createFileRoute('/_authenticated')({
       }
     }
   },
-  component: AuthenticatedLayout,
+  component: LinkAiAuthenticatedLayout,
 })

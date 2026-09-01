@@ -19,7 +19,13 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { TelegramLoginWidget } from '@/features/auth/components/telegram-login-widget'
+import { WeChatLoginDialog } from '@/features/auth/components/wechat-login-dialog'
+
 import { LinkAiAuthShell } from '../components/auth-shell'
+import { LinkAiLegalConsent } from '../components/legal-consent'
+import { LinkAiOAuthProviderGrid } from '../components/oauth-provider-grid'
+import { hasConfiguredOAuthProviders } from '../components/oauth-provider-visibility'
 import { LinkAiSignUpForm } from './sign-up-form'
 import { useLinkAiSignUp } from './use-linkai-sign-up'
 
@@ -28,6 +34,14 @@ const SIGN_UP_ASSET_ROOT = '/figma/linkai-auth/sign-up'
 export function LinkAiSignUpPage() {
   const { t } = useTranslation()
   const state = useLinkAiSignUp()
+
+  const showOAuthOptions =
+    state.registerEnabled &&
+    state.oauthRegistrationEnabled &&
+    (hasConfiguredOAuthProviders(state.status) || state.telegramLoginEnabled)
+  const showPasswordForm =
+    state.registerEnabled && state.passwordRegistrationEnabled
+  const showDivider = showOAuthOptions && showPasswordForm
 
   return (
     <LinkAiAuthShell
@@ -48,54 +62,61 @@ export function LinkAiSignUpPage() {
           {t('Choose a social account or register with email')}
         </p>
 
-        <div className='mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2'>
-          <button
-            type='button'
-            onClick={() =>
-              state.requireConfigured(
-                state.oauthRegistrationEnabled &&
-                  Boolean(state.status?.github_oauth),
-                state.oauth.handleGitHubLogin
-              )
-            }
-            className='flex h-[46px] items-center justify-center gap-3 rounded-full border border-[#2a2a2a] bg-[#1a1a1a] text-base text-white transition hover:-translate-y-0.5 hover:border-[#7258ce] hover:bg-[#211a31] focus-visible:ring-2 focus-visible:ring-[#7258ce] focus-visible:outline-none'
+        {!state.registerEnabled && (
+          <p
+            data-linkai-register-disabled
+            className='mt-8 rounded-[16px] border border-[#2a2a2a] bg-[#1a1a1a] px-6 py-5 text-center text-sm text-[#9b9b9b]'
           >
-            <img
-              src={`${SIGN_UP_ASSET_ROOT}/raw-09.png`}
-              alt=''
-              className='h-[18px] w-4 object-contain'
-              aria-hidden='true'
-            />
-            {t('GitHub')}
-          </button>
-          <button
-            type='button'
-            onClick={() =>
-              state.requireConfigured(
-                state.oauthRegistrationEnabled &&
-                  Boolean(state.status?.oidc_enabled),
-                state.oauth.handleOIDCLogin
-              )
-            }
-            className='flex h-[46px] items-center justify-center gap-3 rounded-full border border-[#2a2a2a] bg-[#1a1a1a] text-base text-white transition hover:-translate-y-0.5 hover:border-[#7258ce] hover:bg-[#211a31] focus-visible:ring-2 focus-visible:ring-[#7258ce] focus-visible:outline-none'
-          >
-            <img
-              src={`${SIGN_UP_ASSET_ROOT}/raw-10.png`}
-              alt=''
-              className='h-5 w-5 object-contain'
-              aria-hidden='true'
-            />
-            {t('Google')}
-          </button>
-        </div>
+            {t('Registration is currently disabled')}
+          </p>
+        )}
 
-        <div className='mt-10 mb-5 flex h-5 items-center gap-4 text-sm text-[#9b9b9b]'>
-          <span className='h-[2px] flex-1 bg-[#2c2c2c]' />
-          <span>{t('Or')}</span>
-          <span className='h-[2px] flex-1 bg-[#2c2c2c]' />
-        </div>
+        {showOAuthOptions && (
+          <div className='mt-8'>
+            <LinkAiOAuthProviderGrid
+              status={state.status}
+              oauth={state.oauth}
+              githubIconSrc={`${SIGN_UP_ASSET_ROOT}/raw-09.png`}
+              guardAuthAction={state.guardAuthAction}
+              onWeChatLogin={
+                state.status?.wechat_login
+                  ? state.handleOpenWeChatDialog
+                  : undefined
+              }
+            />
+            {state.telegramLoginEnabled && (
+              <div className='mt-4 flex justify-center'>
+                <TelegramLoginWidget
+                  botName={state.telegramBotName}
+                  onAuth={state.handleTelegramAuth}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
-        <LinkAiSignUpForm state={state} />
+        {showOAuthOptions &&
+          !showPasswordForm &&
+          state.requiresLegalConsent && (
+            <div className='mt-6'>
+              <LinkAiLegalConsent
+                id='linkai-sign-up-oauth-legal-consent'
+                status={state.status}
+                checked={state.agreedToLegal}
+                onCheckedChange={state.setAgreedToLegal}
+              />
+            </div>
+          )}
+
+        {showDivider && (
+          <div className='mt-10 mb-5 flex h-5 items-center gap-4 text-sm text-[#9b9b9b]'>
+            <span className='h-[2px] flex-1 bg-[#2c2c2c]' />
+            <span>{t('Or')}</span>
+            <span className='h-[2px] flex-1 bg-[#2c2c2c]' />
+          </div>
+        )}
+
+        {showPasswordForm && <LinkAiSignUpForm state={state} />}
 
         <p
           data-linkai-auth-footer
@@ -110,6 +131,17 @@ export function LinkAiSignUpPage() {
           </Link>
         </p>
       </div>
+
+      {state.status?.wechat_login && (
+        <WeChatLoginDialog
+          open={state.isWeChatDialogOpen}
+          onOpenChange={state.setIsWeChatDialogOpen}
+          qrCodeUrl={state.wechatQrCodeUrl}
+          isSubmitting={state.isWeChatSubmitting}
+          onSubmit={state.handleWeChatLogin}
+          disabled={state.requiresLegalConsent && !state.agreedToLegal}
+        />
+      )}
     </LinkAiAuthShell>
   )
 }

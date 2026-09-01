@@ -69,6 +69,8 @@ export function PlaygroundInputControls({
 
   const renderSelector = () => (
     <ModelGroupSelector
+      className='h-9 max-w-[12rem] rounded-lg border border-[#2c2c2c] bg-[#1c1c1c] px-3 text-[#eeeeee] hover:bg-[#262626] sm:h-10'
+      compactTrigger
       selectedModel={modelValue}
       models={models}
       onModelChange={onModelChange}
@@ -82,7 +84,7 @@ export function PlaygroundInputControls({
   const renderSubmitButton = () =>
     shouldShowStop ? (
       <PromptInputButton
-        className='border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/15 font-medium'
+        className='border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/20 h-9 min-w-9 rounded-full px-3 font-medium sm:h-10 sm:min-w-[6.75rem]'
         onClick={onStop}
         variant='secondary'
       >
@@ -92,12 +94,12 @@ export function PlaygroundInputControls({
       </PromptInputButton>
     ) : (
       <PromptInputButton
-        className='bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground h-8 px-3 font-medium shadow-sm'
+        className='h-9 min-w-9 rounded-full border border-[#2c2c2c] bg-[#1c1c1c] px-3 text-[#eeeeee] shadow-none hover:bg-[#262626] disabled:border-[#252525] disabled:bg-[#151515] disabled:text-[#666666] sm:h-10 sm:min-w-[6.75rem] sm:px-4'
         disabled={!canSubmit}
         type='submit'
         variant='default'
       >
-        <SendIcon size={16} />
+        <SendIcon className='size-[17px]' aria-hidden='true' />
         <span className='hidden sm:inline'>{t('Send')}</span>
         <span className='sr-only sm:hidden'>{t('Send')}</span>
       </PromptInputButton>
@@ -116,7 +118,7 @@ export function PlaygroundInputControls({
         </div>
       </div>
 
-      <div className='hidden min-w-0 items-center gap-2 md:flex'>
+      <div className='hidden min-w-0 items-center gap-3 md:flex'>
         {renderSelector()}
         {renderSubmitButton()}
       </div>

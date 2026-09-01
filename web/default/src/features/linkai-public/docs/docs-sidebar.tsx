@@ -39,7 +39,7 @@ export function DocsSidebar(props: {
   }, [query, t])
 
   return (
-    <aside className='border-b border-white/10 bg-black px-5 py-6 lg:sticky lg:top-[135px] lg:h-[calc(100svh-135px)] lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-6'>
+    <aside className='border-b border-white/10 bg-black px-5 py-6 lg:sticky lg:top-20 lg:h-[calc(100svh-80px)] lg:overflow-y-auto lg:border-r lg:border-b-0 lg:px-6 lg:py-6'>
       <label className='flex h-[50px] items-center gap-2 rounded-[9px] border border-[#181818] bg-[#0a0a0a] px-4'>
         <Search className='size-5 text-[#606060]' aria-hidden />
         <span className='sr-only'>{t('Search documentation')}</span>

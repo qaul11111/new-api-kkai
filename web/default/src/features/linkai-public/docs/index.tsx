@@ -32,7 +32,7 @@ export function LinkAiDocsPage(props: {
   return (
     <div className='min-h-svh bg-black text-white'>
       <LinkAiPublicHeader />
-      <main className='mx-auto grid min-h-[calc(100svh-104px)] w-full max-w-[1920px] lg:min-h-[calc(100svh-135px)] lg:grid-cols-[512px_minmax(0,1fr)]'>
+      <main className='mx-auto grid min-h-[calc(100svh-80px)] w-full max-w-[1920px] lg:grid-cols-[512px_minmax(0,1fr)]'>
         <DocsSidebar activeId={article.id} onSelect={props.onArticleChange} />
         <DocsArticleContent key={article.id} article={article} />
       </main>

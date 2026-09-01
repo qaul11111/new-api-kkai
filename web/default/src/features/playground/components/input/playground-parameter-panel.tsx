@@ -205,12 +205,12 @@ export function PlaygroundParameterPanel(props: PlaygroundParameterPanelProps) {
   const trigger = (
     <PromptInputButton
       aria-label={t('Parameters')}
-      className='text-muted-foreground hover:text-foreground hover:bg-muted/70 relative font-medium'
+      className='relative size-9 text-[#8b8b8b] hover:bg-white/5 hover:text-white'
       disabled={props.disabled}
       variant='ghost'
     >
-      <SlidersHorizontalIcon size={16} />
-      <span className='bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full px-1 text-[9px] leading-none font-semibold'>
+      <SlidersHorizontalIcon className='size-[18px]' aria-hidden='true' />
+      <span className='absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-white px-1 text-[8px] leading-none font-semibold text-black'>
         {activeCount}
       </span>
     </PromptInputButton>

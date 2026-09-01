@@ -191,7 +191,7 @@ export function LinkAiRankingDetailPage(props: {
     <div className='min-h-svh bg-black text-white'>
       <LinkAiPublicHeader />
 
-      <div className='sticky top-[104px] z-40 border-b border-white/10 bg-black/95 backdrop-blur-xl lg:top-[135px]'>
+      <div className='sticky top-20 z-40 border-b border-white/10 bg-black/95 backdrop-blur-xl'>
         <div className='mx-auto flex min-h-16 max-w-[1576px] flex-col gap-3 px-5 py-2 sm:px-8 xl:px-0 2xl:flex-row 2xl:items-center 2xl:justify-between'>
           <nav
             aria-label={t('Ranking categories')}

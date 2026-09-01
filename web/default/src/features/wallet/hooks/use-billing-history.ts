@@ -40,10 +40,12 @@ interface UseBillingHistoryOptions {
   initialPage?: number
   /** Initial page size */
   initialPageSize?: number
+  /** Only load records while the billing history surface is visible. */
+  enabled?: boolean
 }
 
 export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
-  const { initialPage = 1, initialPageSize = 10 } = options
+  const { initialPage = 1, initialPageSize = 10, enabled = true } = options
   const isAdmin = useIsAdmin()
 
   const [records, setRecords] = useState<TopupRecord[]>([])
@@ -154,10 +156,12 @@ export function useBillingHistory(options: UseBillingHistoryOptions = {}) {
 
   // Fetch data after the search draft has settled.
   useEffect(() => {
+    if (!enabled) return
     if (keyword !== debouncedKeyword) return
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchBillingHistory()
-  }, [debouncedKeyword, fetchBillingHistory, keyword])
+  }, [debouncedKeyword, enabled, fetchBillingHistory, keyword])
 
   return {
     records,

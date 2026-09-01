@@ -21,9 +21,11 @@ import { Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { ConfigDrawer } from '@/components/config-drawer'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
 import { LINKAI_HOME_ASSETS } from '@/features/home/components/linkai-home/assets'
 import { useNotifications } from '@/hooks/use-notifications'
 import { cn } from '@/lib/utils'
@@ -36,6 +38,7 @@ import {
   LINKAI_HEADER_EXPANDED_NAV_CLASS,
   LINKAI_HEADER_EXPANDED_ROW_CLASS,
 } from './header-geometry'
+import { showsConsoleHeaderActions } from './public-header-mode'
 
 type PublicHeaderLink = {
   href: '/' | '/pricing' | '/rankings' | '/about' | '/docs'
@@ -70,12 +73,32 @@ function PublicNavigationLink(props: {
   )
 }
 
-export function LinkAiPublicHeader() {
+type LinkAiPublicHeaderProps = {
+  /** Adds authenticated-console tools without changing public-page output. */
+  consoleMode?: boolean
+  /** Temporarily hides console search and theme controls without affecting the public header. */
+  showConsoleSearchAndTheme?: boolean
+}
+
+type NotificationSurface = 'desktop' | 'mobile'
+
+export function LinkAiPublicHeader(props: LinkAiPublicHeaderProps) {
   const { t } = useTranslation()
   const pathname = useLocation({ select: (location) => location.pathname })
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [notificationSurface, setNotificationSurface] =
+    useState<NotificationSurface | null>(null)
   const user = useAuthStore((state) => state.auth.user)
   const notifications = useNotifications()
+  const showConsoleActions = showsConsoleHeaderActions(props.consoleMode)
+  const showConsoleSearchAndTheme =
+    showConsoleActions && props.showConsoleSearchAndTheme !== false
+
+  const handleNotificationOpenChange =
+    (surface: NotificationSurface) => (open: boolean) => {
+      setNotificationSurface(open ? surface : null)
+      notifications.setPopoverOpen(open)
+    }
 
   const links: PublicHeaderLink[] = [
     { href: '/', label: t('Home') },
@@ -95,16 +118,20 @@ export function LinkAiPublicHeader() {
   }, [mobileOpen])
 
   return (
-    <header className='sticky top-0 z-50 bg-black/95 text-white backdrop-blur-xl after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10'>
+    <header
+      className={cn(
+        'sticky top-0 z-50 bg-black/95 text-white backdrop-blur-xl after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-white/10',
+        props.consoleMode && 'shrink-0'
+      )}
+    >
       <div
-        className={cn(
-          'mx-auto w-full pb-4',
-          LINKAI_HEADER_EXPANDED_CONTAINER_CLASS
-        )}
+        data-testid='linkai-header-container'
+        className={cn('mx-auto w-full', LINKAI_HEADER_EXPANDED_CONTAINER_CLASS)}
       >
         <div
+          data-testid='linkai-header-row'
           className={cn(
-            'grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-5 border',
+            'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-5 border',
             LINKAI_HEADER_EXPANDED_ROW_CLASS
           )}
         >
@@ -124,8 +151,9 @@ export function LinkAiPublicHeader() {
 
           <nav
             aria-label={t('Primary navigation')}
+            data-testid='linkai-primary-desktop-navigation'
             className={cn(
-              'col-start-2 row-start-1 hidden items-center justify-center justify-self-end gap-1 xl:flex',
+              'row-start-1 hidden items-center justify-center gap-1 xl:flex',
               LINKAI_HEADER_EXPANDED_NAV_CLASS
             )}
           >
@@ -147,13 +175,30 @@ export function LinkAiPublicHeader() {
             })}
           </nav>
 
-          <div className={LINKAI_HEADER_DESKTOP_ACTIONS_CLASS}>
+          <div
+            data-testid='linkai-header-desktop-actions'
+            className={cn(
+              LINKAI_HEADER_DESKTOP_ACTIONS_CLASS,
+              props.consoleMode && 'w-auto min-w-max'
+            )}
+          >
+            {showConsoleSearchAndTheme && (
+              <div
+                data-testid='linkai-console-desktop-actions'
+                className='hidden items-center gap-1 lg:flex [&_button]:text-white [&_button:hover]:bg-white/10'
+              >
+                <Search className='hidden text-white placeholder:text-white/45 2xl:flex' />
+                <ConfigDrawer />
+              </div>
+            )}
             <div className='[&_button]:text-white [&_button:hover]:bg-white/10'>
               <LanguageSwitcher />
             </div>
             <NotificationPopover
-              open={notifications.popoverOpen}
-              onOpenChange={notifications.setPopoverOpen}
+              open={
+                notifications.popoverOpen && notificationSurface === 'desktop'
+              }
+              onOpenChange={handleNotificationOpenChange('desktop')}
               unreadCount={notifications.unreadCount}
               activeTab={notifications.activeTab}
               onTabChange={notifications.setActiveTab}
@@ -199,8 +244,11 @@ export function LinkAiPublicHeader() {
 
       <div
         id='linkai-public-mobile-navigation'
+        inert={!mobileOpen}
+        aria-hidden={!mobileOpen}
         className={cn(
-          'absolute inset-x-0 top-[104px] overflow-hidden border-b border-white/10 bg-black/95 px-5 transition-[max-height,opacity] duration-300 lg:top-[135px] xl:hidden',
+          'absolute inset-x-0 overflow-hidden border-b border-white/10 bg-black/95 px-5 transition-[max-height,opacity] duration-300 xl:hidden',
+          'top-20',
           mobileOpen ? 'max-h-[32rem] pb-5 opacity-100' : 'max-h-0 opacity-0'
         )}
       >
@@ -214,6 +262,34 @@ export function LinkAiPublicHeader() {
             />
           ))}
         </nav>
+        {showConsoleActions && (
+          <div
+            data-testid='linkai-console-mobile-actions'
+            className='[&_[aria-label="Open theme settings"]]:flex! mt-4 grid grid-cols-2 gap-2 border-b border-white/10 pb-4 [&_button]:text-white [&_button:hover]:bg-white/10'
+          >
+            {showConsoleSearchAndTheme && (
+              <>
+                <Search className='w-full text-white placeholder:text-white/45' />
+                <ConfigDrawer />
+              </>
+            )}
+            <LanguageSwitcher />
+            <NotificationPopover
+              open={
+                notifications.popoverOpen && notificationSurface === 'mobile'
+              }
+              onOpenChange={handleNotificationOpenChange('mobile')}
+              unreadCount={notifications.unreadCount}
+              activeTab={notifications.activeTab}
+              onTabChange={notifications.setActiveTab}
+              notice={notifications.notice}
+              announcements={notifications.announcements}
+              loading={notifications.loading}
+              className='text-white hover:bg-white/10 hover:text-white'
+            />
+            {user && <ProfileDropdown />}
+          </div>
+        )}
         <div className='mt-4 grid grid-cols-2 gap-3'>
           <Link
             to={user ? '/dashboard' : '/sign-in'}

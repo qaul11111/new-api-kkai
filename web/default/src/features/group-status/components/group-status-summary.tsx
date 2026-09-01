@@ -35,7 +35,7 @@ export function GroupStatusSummary(props: {
 
   return (
     <section
-      className='bg-card/60 flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2'
+      className='linkai-group-status-summary bg-card/60 flex min-h-11 flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2'
       aria-label={t('Status summary')}
     >
       <div className='flex min-w-0 flex-wrap items-center gap-2'>

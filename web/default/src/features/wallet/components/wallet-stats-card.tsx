@@ -28,13 +28,31 @@ import type { UserWalletData } from '../types'
 interface WalletStatsCardProps {
   user: UserWalletData | null
   loading?: boolean
+  variant?: 'default' | 'linkai'
 }
 
 export function WalletStatsCard(props: WalletStatsCardProps) {
   const { t } = useTranslation()
   if (props.loading) {
+    if (props.variant === 'linkai') {
+      return (
+        <div className='wallet-stats-card linkai-wallet-stats-grid'>
+          {['balance', 'usage', 'requests'].map((key) => (
+            <div key={key} className='linkai-wallet-stat-card'>
+              <Skeleton className='size-[63px] shrink-0 rounded-full' />
+              <div className='min-w-0 flex-1'>
+                <Skeleton className='h-5 w-28' />
+                <Skeleton className='mt-2 h-4 w-32' />
+              </div>
+              <Skeleton className='h-9 w-20' />
+            </div>
+          ))}
+        </div>
+      )
+    }
+
     return (
-      <div className='grid grid-cols-3 divide-x rounded-lg border'>
+      <div className='wallet-stats-card grid grid-cols-3 divide-x rounded-lg border'>
         {['balance', 'usage', 'requests'].map((key) => (
           <div key={key} className='min-w-0 px-2.5 py-2.5 sm:px-5 sm:py-4'>
             <Skeleton className='h-3.5 w-full' />
@@ -76,8 +94,34 @@ export function WalletStatsCard(props: WalletStatsCardProps) {
     },
   ]
 
+  if (props.variant === 'linkai') {
+    return (
+      <div className='wallet-stats-card linkai-wallet-stats-grid'>
+        {stats.map((item) => (
+          <article key={item.label} className='linkai-wallet-stat-card'>
+            <span className='linkai-wallet-stat-icon' aria-hidden='true'>
+              <img
+                src='/figma/linkai-console/wallet/stat-ring.svg'
+                alt=''
+                className='linkai-wallet-stat-icon-ring'
+              />
+              <item.icon className='linkai-wallet-stat-icon-glyph' />
+            </span>
+            <span className='linkai-wallet-stat-copy'>
+              <span className='linkai-wallet-stat-label'>{item.label}</span>
+              <span className='linkai-wallet-stat-description'>
+                {item.description}
+              </span>
+            </span>
+            <strong className='linkai-wallet-stat-value'>{item.value}</strong>
+          </article>
+        ))}
+      </div>
+    )
+  }
+
   return (
-    <div className='grid grid-cols-3 divide-x rounded-lg border'>
+    <div className='wallet-stats-card grid grid-cols-3 divide-x rounded-lg border'>
       {stats.map((item) => (
         <div key={item.label} className='min-w-0 px-2.5 py-2.5 sm:px-5 sm:py-4'>
           <div className='flex items-center gap-1.5 sm:gap-2.5'>

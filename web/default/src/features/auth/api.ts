@@ -25,6 +25,7 @@ import type {
   TwoFAPayload,
   RegisterPayload,
   ApiResponse,
+  TelegramAuthPayload,
 } from './types'
 
 // ============================================================================
@@ -97,6 +98,43 @@ export async function getOAuthState(): Promise<string> {
 // WeChat login by authorization code
 export async function wechatLoginByCode(code: string): Promise<ApiResponse> {
   const res = await api.get('/api/oauth/wechat', { params: { code } })
+  return res.data
+}
+
+// Fields the Telegram login widget can return; the backend recomputes the
+// authorization hash from exactly the forwarded fields, so anything the
+// widget did not provide must be dropped instead of sent as an empty value.
+const TELEGRAM_AUTH_FIELDS = [
+  'id',
+  'first_name',
+  'last_name',
+  'username',
+  'photo_url',
+  'auth_date',
+  'hash',
+  'lang',
+] as const
+
+export function buildTelegramAuthParams(
+  payload: TelegramAuthPayload
+): Record<string, string> {
+  const params: Record<string, string> = {}
+  for (const field of TELEGRAM_AUTH_FIELDS) {
+    const value = payload[field]
+    if (value !== undefined && value !== null && value !== '') {
+      params[field] = String(value)
+    }
+  }
+  return params
+}
+
+// Telegram login with the authorization payload from the login widget
+export async function telegramLogin(
+  payload: TelegramAuthPayload
+): Promise<LoginResponse> {
+  const res = await api.get('/api/oauth/telegram/login', {
+    params: buildTelegramAuthParams(payload),
+  })
   return res.data
 }
 

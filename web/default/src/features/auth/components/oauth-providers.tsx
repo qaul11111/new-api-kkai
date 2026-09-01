@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils'
 
 import { useOAuthLogin } from '../hooks/use-oauth-login'
 import type { SystemStatus } from '../types'
+import { TelegramLoginWidget } from './telegram-login-widget'
 
 type OAuthProvidersProps = {
   status: SystemStatus | null
@@ -37,6 +38,8 @@ type OAuthProvidersProps = {
   className?: string
   onWeChatLogin?: () => void
   isWeChatLoading?: boolean
+  /** Invoked instead of auth when the widget fires while `disabled` (e.g. missing legal consent). */
+  onAuthBlocked?: () => void
 }
 
 type ProviderButton = {
@@ -53,6 +56,7 @@ export function OAuthProviders({
   className,
   onWeChatLogin,
   isWeChatLoading = false,
+  onAuthBlocked,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -63,7 +67,7 @@ export function OAuthProviders({
     handleDiscordLogin,
     handleOIDCLogin,
     handleLinuxDOLogin,
-    handleTelegramLogin,
+    handleTelegramAuth,
     handleCustomOAuthLogin,
   } = useOAuthLogin(status)
 
@@ -115,14 +119,6 @@ export function OAuthProviders({
     })
   }
 
-  if (status?.telegram_oauth) {
-    providerButtons.push({
-      key: 'telegram',
-      label: t('Continue with Telegram'),
-      onClick: handleTelegramLogin,
-    })
-  }
-
   // Custom OAuth providers
   const customProviders = status?.custom_oauth_providers
   if (customProviders && customProviders.length > 0) {
@@ -135,7 +131,13 @@ export function OAuthProviders({
     }
   }
 
-  if (providerButtons.length === 0) return null
+  const telegramBotName =
+    typeof status?.telegram_bot_name === 'string'
+      ? status.telegram_bot_name
+      : ''
+  const showTelegramWidget = Boolean(status?.telegram_oauth && telegramBotName)
+
+  if (providerButtons.length === 0 && !showTelegramWidget) return null
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -167,6 +169,21 @@ export function OAuthProviders({
           )
         )}
       </div>
+
+      {showTelegramWidget && (
+        <div className='flex justify-center'>
+          <TelegramLoginWidget
+            botName={telegramBotName}
+            onAuth={(payload) => {
+              if (disabled) {
+                onAuthBlocked?.()
+                return
+              }
+              void handleTelegramAuth(payload)
+            }}
+          />
+        </div>
+      )}
     </div>
   )
 }

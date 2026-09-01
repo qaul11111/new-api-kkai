@@ -16,6 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { buildTelegramAuthParams } from '@/features/auth/api'
+import type { TelegramAuthPayload } from '@/features/auth/types'
 import { api } from '@/lib/api'
 import type { CustomOAuthBinding } from '@/lib/oauth'
 
@@ -132,6 +134,29 @@ export async function bindWeChat(code: string): Promise<ApiResponse> {
     { skipBusinessError: true, skipErrorHandler: true }
   )
   return res.data
+}
+
+/**
+ * Bind Telegram account with the authorization payload from the login widget.
+ *
+ * The backend answers a successful bind with a 302 redirect to the profile
+ * page; axios follows it and receives HTML instead of the JSON envelope, so
+ * any non-JSON response is treated as success while a JSON `success: false`
+ * payload (or a rejected request) is surfaced as an error.
+ */
+export async function bindTelegramAccount(
+  payload: TelegramAuthPayload
+): Promise<ApiResponse> {
+  const res = await api.get('/api/oauth/telegram/bind', {
+    params: buildTelegramAuthParams(payload),
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
+  const data: unknown = res.data
+  if (data && typeof data === 'object' && 'success' in data) {
+    return data as ApiResponse
+  }
+  return { success: true, message: '' }
 }
 
 // ============================================================================

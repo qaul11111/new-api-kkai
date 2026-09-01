@@ -19,11 +19,19 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import z from 'zod'
 
-import { UsageLogs } from '@/features/usage-logs'
+import { LinkAiUsageLogs } from '@/features/linkai-console/usage-logs'
+import {
+  findAccessibleUsageLogsSection,
+  isUsageLogsSectionAccessible,
+  resolveUsageLogsFeatureFlags,
+} from '@/features/usage-logs/lib/section-access'
 import {
   isUsageLogsSectionId,
   USAGE_LOGS_DEFAULT_SECTION,
 } from '@/features/usage-logs/section-registry'
+import { createSidebarModuleVisibility } from '@/hooks/use-sidebar-config'
+import { getStatus } from '@/lib/api'
+import { useAuthStore } from '@/stores/auth-store'
 
 const logTypeValues = ['0', '1', '2', '3', '4', '5', '6', '7'] as const
 const logTypeSearchSchema = z
@@ -50,7 +58,7 @@ const usageLogsSearchSchema = z.object({
 })
 
 export const Route = createFileRoute('/_authenticated/usage-logs/$section')({
-  beforeLoad: ({ params, search }) => {
+  beforeLoad: async ({ params, search, context }) => {
     if (!isUsageLogsSectionId(params.section)) {
       throw redirect({
         to: '/usage-logs/$section',
@@ -69,7 +77,41 @@ export const Route = createFileRoute('/_authenticated/usage-logs/$section')({
         replace: true,
       })
     }
+
+    // Route-level access must match navigation: legacy enable_drawing /
+    // enable_task flags AND the admin × user sidebar_modules overlay.
+    const status = (await context.queryClient
+      .ensureQueryData({
+        queryKey: ['status'],
+        queryFn: getStatus,
+        staleTime: 5 * 60 * 1000,
+      })
+      .catch(() => null)) as Record<string, unknown> | null
+    const { auth } = useAuthStore.getState()
+    const isModuleVisible = createSidebarModuleVisibility({
+      sidebarModulesAdmin: status?.SidebarModulesAdmin as
+        | string
+        | null
+        | undefined,
+      userSidebarModules: auth.user?.sidebar_modules,
+      sidebarSettingsPermission: auth.user?.permissions?.sidebar_settings,
+      status,
+    })
+    const flags = resolveUsageLogsFeatureFlags(status)
+    const section = params.section
+    if (!isUsageLogsSectionAccessible(section, flags, isModuleVisible)) {
+      const fallback = findAccessibleUsageLogsSection(flags, isModuleVisible)
+      if (fallback) {
+        throw redirect({
+          to: '/usage-logs/$section',
+          params: { section: fallback },
+          search: { ...search },
+          replace: true,
+        })
+      }
+      throw redirect({ to: '/403' })
+    }
   },
   validateSearch: usageLogsSearchSchema,
-  component: UsageLogs,
+  component: LinkAiUsageLogs,
 })

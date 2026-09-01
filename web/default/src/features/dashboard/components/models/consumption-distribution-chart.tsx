@@ -76,6 +76,7 @@ export function ConsumptionDistributionChart(
   const timeGranularity = props.timeGranularity ?? DEFAULT_TIME_GRANULARITY
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (props.defaultChartType) setChartType(props.defaultChartType)
   }, [props.defaultChartType])
 
@@ -120,8 +121,8 @@ export function ConsumptionDistributionChart(
   ].join('-')
 
   return (
-    <div className='overflow-hidden rounded-lg border'>
-      <div className='flex w-full flex-col gap-1.5 border-b px-3 py-2 sm:gap-3 sm:px-5 sm:py-3 lg:flex-row lg:items-center lg:justify-between'>
+    <div className='linkai-analytics-chart-card overflow-hidden rounded-lg border'>
+      <div className='linkai-analytics-card-header flex w-full flex-col gap-1.5 border-b px-3 py-2 sm:gap-3 sm:px-5 sm:py-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-2'>
           <IconBadge tone='success' size='sm'>
             <WalletCards />
@@ -132,7 +133,7 @@ export function ConsumptionDistributionChart(
           </span>
         </div>
 
-        <div className='bg-muted/60 inline-flex h-7 w-full overflow-x-auto rounded-lg border p-0.5 sm:h-8 sm:w-auto'>
+        <div className='linkai-analytics-chart-tabs bg-muted/60 inline-flex h-7 w-full overflow-x-auto rounded-lg border p-0.5 sm:h-8 sm:w-auto'>
           {CONSUMPTION_DISTRIBUTION_CHART_OPTIONS.map((item) => {
             const Icon = CHART_TYPE_ICONS[item.value]
             return (

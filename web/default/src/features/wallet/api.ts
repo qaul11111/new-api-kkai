@@ -56,7 +56,10 @@ export function isApiSuccess(response: ApiResponse): boolean {
  * Get topup configuration info
  */
 export async function getTopupInfo(): Promise<TopupInfoResponse> {
-  const res = await api.get('/api/user/topup/info')
+  const res = await api.get('/api/user/topup/info', {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data
 }
 
@@ -185,7 +188,10 @@ export async function requestWaffoPancakePayment(
  * Get affiliate code
  */
 export async function getAffiliateCode(): Promise<AffiliateCodeResponse> {
-  const res = await api.get('/api/user/aff')
+  const res = await api.get('/api/user/aff', {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data
 }
 
@@ -214,7 +220,10 @@ export async function getUserBillingHistory(
   if (keyword) {
     params.append('keyword', keyword)
   }
-  const res = await api.get(`/api/user/topup/self?${params.toString()}`)
+  const res = await api.get(`/api/user/topup/self?${params.toString()}`, {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data
 }
 
@@ -233,7 +242,10 @@ export async function getAllBillingHistory(
   if (keyword) {
     params.append('keyword', keyword)
   }
-  const res = await api.get(`/api/user/topup?${params.toString()}`)
+  const res = await api.get(`/api/user/topup?${params.toString()}`, {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data
 }
 

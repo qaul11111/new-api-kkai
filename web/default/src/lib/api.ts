@@ -65,7 +65,10 @@ api.get = ((url: string, config: ApiRequestConfig = {}) => {
   const key = `${url}?${params}`
 
   // Return existing in-flight request if available
-  if (inFlightGet.has(key)) return inFlightGet.get(key)!
+  const existingRequest = inFlightGet.get(key)
+  if (existingRequest) {
+    return existingRequest as ReturnType<typeof originalGet>
+  }
 
   // Create new request and clean up after completion
   const req = originalGet(url, config).finally(() => inFlightGet.delete(key))
@@ -111,6 +114,11 @@ api.interceptors.response.use(
       if (!skip) {
         toast.error(t('Session expired!'))
       }
+    } else if (!skip && status === 429) {
+      toast.error(t('Too many requests'), {
+        id: 'api-rate-limit',
+        duration: 2500,
+      })
     } else if (!skip) {
       // Other errors: show error message from response or default
       const msg =
@@ -212,7 +220,10 @@ export async function getUserGroups(): Promise<{
 
 // Get system status
 export async function getStatus() {
-  const res = await api.get('/api/status')
+  const res = await api.get('/api/status', {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data?.data as Record<string, unknown>
 }
 

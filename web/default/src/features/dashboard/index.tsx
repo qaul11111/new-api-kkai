@@ -115,7 +115,7 @@ const LazyFlowCharts = lazy(() =>
 
 function LogStatCardsFallback() {
   return (
-    <div className='overflow-hidden rounded-lg border'>
+    <div className='linkai-analytics-stat-card overflow-hidden rounded-lg border'>
       <div className='divide-border/60 grid grid-cols-2 divide-x sm:grid-cols-3 lg:grid-cols-5'>
         {LOG_STAT_CARD_FALLBACK_KEYS.map((key, index) => (
           <div
@@ -141,8 +141,8 @@ function LogStatCardsFallback() {
 
 function ModelChartsFallback() {
   return (
-    <div className='overflow-hidden rounded-lg border'>
-      <div className='flex items-center justify-between border-b px-4 py-3 sm:px-5'>
+    <div className='linkai-analytics-chart-card overflow-hidden rounded-lg border'>
+      <div className='linkai-analytics-card-header flex items-center justify-between border-b px-4 py-3 sm:px-5'>
         <Skeleton className='h-5 w-32' />
         <Skeleton className='h-8 w-72' />
       </div>
@@ -318,12 +318,12 @@ export function Dashboard() {
   const sectionActions = modelActions ?? flowActions
 
   return (
-    <SectionPageLayout>
+    <SectionPageLayout className='linkai-dashboard-analytics'>
       <SectionPageLayout.Title>{t(meta.titleKey)}</SectionPageLayout.Title>
       <SectionPageLayout.Content>
-        <div className='space-y-3 sm:space-y-4'>
+        <div className='linkai-dashboard-stack space-y-3 sm:space-y-4'>
           {activeSection !== 'overview' && (
-            <div className='flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
+            <div className='linkai-dashboard-toolbar flex flex-wrap items-center justify-between gap-1.5 sm:gap-2'>
               {showSectionTabs ? (
                 <Tabs value={activeSection} onValueChange={handleSectionChange}>
                   <TabsList className='max-w-full flex-wrap justify-start group-data-horizontal/tabs:h-auto'>

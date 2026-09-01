@@ -266,7 +266,7 @@ export function CommonLogsFilterBar<TData>(
     logTypeItems.find((type) => type.value === logType)?.label ?? t('All Types')
 
   const statsBar = (
-    <div className='flex flex-wrap items-center gap-2'>
+    <div className='linkai-log-toolbar-stats flex flex-wrap items-center gap-2'>
       <CommonLogsStats />
     </div>
   )

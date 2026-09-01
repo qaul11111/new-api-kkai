@@ -16,12 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { useEffect, useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import type { z } from 'zod'
 
-import { register } from '@/features/auth/api'
+import { register, wechatLoginByCode } from '@/features/auth/api'
+import { resolveWeChatQrCodeUrl } from '@/features/auth/components/wechat-qr-code'
+import { registerFormSchema } from '@/features/auth/constants'
 import { useAuthRedirect } from '@/features/auth/hooks/use-auth-redirect'
 import { useEmailVerification } from '@/features/auth/hooks/use-email-verification'
 import { useOAuthLogin } from '@/features/auth/hooks/use-oauth-login'
@@ -30,21 +34,22 @@ import {
   getAffiliateCode,
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
+import type { TelegramAuthPayload } from '@/features/auth/types'
 import { useStatus } from '@/hooks/use-status'
 
-export type LinkAiSignUpFields = {
-  email: string
-  password: string
-}
+export type LinkAiSignUpFields = z.infer<typeof registerFormSchema>
 
 export function useLinkAiSignUp() {
   const { t } = useTranslation()
   const { status } = useStatus()
   const oauth = useOAuthLogin(status)
-  const { redirectToLogin } = useAuthRedirect()
+  const { redirectToLogin, handleLoginSuccess } = useAuthRedirect()
   const [isLoading, setIsLoading] = useState(false)
   const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
+  const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
+  const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
+  const weChatSubmittingRef = useRef(false)
   const [turnstileWidgetKey, setTurnstileWidgetKey] = useState(0)
   const turnstile = useTurnstile()
   const emailVerification = useEmailVerification({
@@ -52,10 +57,17 @@ export function useLinkAiSignUp() {
     validateTurnstile: turnstile.validateTurnstile,
   })
   const form = useForm<LinkAiSignUpFields>({
-    defaultValues: { email: '', password: '' },
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: {
+      username: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
   })
   const email = useWatch({ control: form.control, name: 'email' })
   const emailVerificationRequired = Boolean(status?.email_verification)
+  const registerEnabled = status?.register_enabled !== false
   const passwordRegistrationEnabled =
     (status?.password_register_enabled ??
       status?.data?.password_register_enabled ??
@@ -67,6 +79,14 @@ export function useLinkAiSignUp() {
   const requiresLegalConsent = Boolean(
     status?.user_agreement_enabled || status?.privacy_policy_enabled
   )
+  const telegramBotName =
+    typeof status?.telegram_bot_name === 'string'
+      ? status.telegram_bot_name
+      : ''
+  const telegramLoginEnabled = Boolean(
+    status?.telegram_oauth && telegramBotName
+  )
+  const wechatQrCodeUrl = resolveWeChatQrCodeUrl(status)
 
   useEffect(() => {
     const affiliateCode = new URLSearchParams(window.location.search)
@@ -81,34 +101,68 @@ export function useLinkAiSignUp() {
     setTurnstileWidgetKey((current) => current + 1)
   }
 
-  const requireConfigured = (
-    isConfigured: boolean,
-    callback: () => void | Promise<void>
-  ) => {
-    if (!isConfigured) {
-      toast.info(t('This sign-in method is not configured'))
+  const guardAuthAction = (action: () => void | Promise<void>) => {
+    if (requiresLegalConsent && !agreedToLegal) {
+      toast.error(t('Please agree to the legal terms first'))
       return
     }
-    void callback()
+    void action()
   }
 
   async function handleSendVerificationCode() {
-    const sent = await emailVerification.sendCode(email)
+    const sent = await emailVerification.sendCode(email ?? '')
     if (sent) resetTurnstile()
   }
 
+  function handleOpenWeChatDialog() {
+    setIsWeChatDialogOpen(true)
+  }
+
+  async function handleWeChatLogin(code: string) {
+    // Synchronous re-entry guard: two submissions in the same tick must not
+    // both reach the backend before the disabled state can propagate.
+    if (weChatSubmittingRef.current) return
+    weChatSubmittingRef.current = true
+    setIsWeChatSubmitting(true)
+    try {
+      const res = await wechatLoginByCode(code)
+      if (res?.success) {
+        await handleLoginSuccess(res.data as { id?: number } | null)
+        toast.success(t('Signed in via WeChat'))
+        setIsWeChatDialogOpen(false)
+      } else {
+        toast.error(res?.message || t('Login failed'))
+      }
+    } catch {
+      toast.error(t('Login failed'))
+    } finally {
+      weChatSubmittingRef.current = false
+      setIsWeChatSubmitting(false)
+    }
+  }
+
+  function handleTelegramAuth(payload: TelegramAuthPayload) {
+    guardAuthAction(() => oauth.handleTelegramAuth(payload))
+  }
+
   async function onSubmit(data: LinkAiSignUpFields) {
+    if (!registerEnabled || !passwordRegistrationEnabled) {
+      toast.info(t('Registration is currently disabled'))
+      return
+    }
     if (requiresLegalConsent && !agreedToLegal) {
-      toast.error(t('Please agree to the Terms of Service and Privacy Policy'))
+      toast.error(t('Please agree to the legal terms first'))
       return
     }
-    if (!passwordRegistrationEnabled || status?.register_enabled === false) {
-      toast.info(t('Email registration is not available'))
-      return
-    }
-    if (emailVerificationRequired && !verificationCode.trim()) {
-      toast.error(t('Please enter the verification code'))
-      return
+    if (emailVerificationRequired) {
+      if (!data.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+        toast.error(t('Please enter a valid email address'))
+        return
+      }
+      if (!verificationCode.trim()) {
+        toast.error(t('Please enter the verification code'))
+        return
+      }
     }
     if (!turnstile.validateTurnstile()) return
 
@@ -117,10 +171,12 @@ export function useLinkAiSignUp() {
     setIsLoading(true)
     try {
       const response = await register({
-        username: data.email,
-        email: data.email,
+        username: data.username,
         password: data.password,
-        verification_code: verificationCode || undefined,
+        email: emailVerificationRequired ? data.email || undefined : undefined,
+        verification_code: emailVerificationRequired
+          ? verificationCode || undefined
+          : undefined,
         aff_code: getAffiliateCode(),
         turnstile: submittedTurnstileToken,
       })
@@ -141,20 +197,30 @@ export function useLinkAiSignUp() {
     emailVerification,
     emailVerificationRequired,
     form,
+    guardAuthAction,
+    handleOpenWeChatDialog,
     handleSendVerificationCode,
+    handleTelegramAuth,
+    handleWeChatLogin,
     isLoading,
+    isWeChatDialogOpen,
+    isWeChatSubmitting,
     oauth,
     oauthRegistrationEnabled,
     onSubmit,
     passwordRegistrationEnabled,
-    requireConfigured,
+    registerEnabled,
     requiresLegalConsent,
     setAgreedToLegal,
+    setIsWeChatDialogOpen,
     setVerificationCode,
     status,
+    telegramBotName,
+    telegramLoginEnabled,
     turnstile,
     turnstileWidgetKey,
     verificationCode,
+    wechatQrCodeUrl,
   }
 }
 

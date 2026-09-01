@@ -55,6 +55,7 @@ import {
 import type { ApiKey } from '../types'
 import { ApiKeyCell } from './api-keys-cells'
 import { useApiKeysColumns } from './api-keys-columns'
+import { ApiKeysPrimaryButtons } from './api-keys-primary-buttons'
 import { useApiKeys } from './api-keys-provider'
 import { DataTableBulkActions } from './data-table-bulk-actions'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -186,9 +187,10 @@ function ApiKeysMobileList({
   )
 }
 
-export function ApiKeysTable() {
+export function ApiKeysTable(props: { variant?: 'default' | 'linkai' }) {
   const { t } = useTranslation()
   const { refreshTrigger } = useApiKeys()
+  const useLinkAiAppearance = props.variant === 'linkai'
   const [now, setNow] = useState(() => Date.now())
   const columns = useApiKeysColumns(now)
 
@@ -325,12 +327,20 @@ export function ApiKeysTable() {
             singleSelect: true,
           },
         ],
+        preActions: useLinkAiAppearance ? <ApiKeysPrimaryButtons /> : undefined,
+        className: useLinkAiAppearance ? 'linkai-key-toolbar' : undefined,
       }}
       mobile={<ApiKeysMobileList table={table} isLoading={isLoading} />}
       getRowClassName={(row) =>
         isDisabledApiKeyRow(row.original) ? DISABLED_ROW_DESKTOP : undefined
       }
       bulkActions={<DataTableBulkActions table={table} />}
+      className={useLinkAiAppearance ? 'linkai-key-data-table' : undefined}
+      tableClassName={
+        useLinkAiAppearance ? 'linkai-key-table-shell' : undefined
+      }
+      fixedHeight={useLinkAiAppearance ? false : undefined}
+      paginationInFooter={useLinkAiAppearance ? false : undefined}
     />
   )
 }

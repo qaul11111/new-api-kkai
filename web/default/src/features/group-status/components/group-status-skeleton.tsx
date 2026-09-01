@@ -24,17 +24,21 @@ const CARD_KEYS = ['card-a', 'card-b', 'card-c', 'card-d', 'card-e', 'card-f']
 
 export function GroupStatusSkeleton() {
   return (
-    <div className='space-y-4' aria-hidden='true'>
-      <div className='flex min-h-11 items-center justify-between rounded-lg border px-3 py-2'>
+    <div className='linkai-group-status-skeleton space-y-4' aria-hidden='true'>
+      <div className='linkai-group-status-summary flex min-h-11 items-center justify-between rounded-lg border px-3 py-2'>
         <div className='flex gap-2'>
           <Skeleton className='h-5 w-20 rounded-full' />
           <Skeleton className='h-5 w-16 rounded-full' />
         </div>
         <Skeleton className='h-3 w-24' />
       </div>
-      <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,24rem),1fr))] gap-3'>
+      <div className='linkai-group-status-grid grid grid-cols-[repeat(auto-fit,minmax(min(100%,24rem),1fr))] gap-3'>
         {CARD_KEYS.map((key) => (
-          <Card key={key} size='sm' className='min-h-[22rem] rounded-lg py-0'>
+          <Card
+            key={key}
+            size='sm'
+            className='linkai-group-status-card min-h-[22rem] rounded-lg py-0'
+          >
             <CardContent className='flex h-full flex-col gap-4 p-4'>
               <div className='flex items-center gap-3'>
                 <Skeleton className='size-11 rounded-lg' />

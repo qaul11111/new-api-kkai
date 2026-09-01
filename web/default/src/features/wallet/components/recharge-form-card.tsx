@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import {
   ArrowUpRight,
+  CircleDollarSign,
   Gift,
   ExternalLink,
   Loader2,
@@ -62,6 +63,7 @@ import type {
 import { CreemProductsSection } from './creem-products-section'
 
 interface RechargeFormCardProps {
+  variant?: 'default' | 'linkai'
   topupInfo: TopupInfo | null
   presetAmounts: PresetAmount[]
   selectedPreset: number | null
@@ -92,6 +94,7 @@ interface RechargeFormCardProps {
 }
 
 export function RechargeFormCard({
+  variant = 'default',
   topupInfo,
   presetAmounts,
   selectedPreset,
@@ -124,6 +127,7 @@ export function RechargeFormCard({
   const [localAmount, setLocalAmount] = useState(topupAmount.toString())
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalAmount(topupAmount.toString())
   }, [topupAmount])
 
@@ -151,7 +155,13 @@ export function RechargeFormCard({
 
   if (loading) {
     return (
-      <Card data-card-hover='false' className='gap-0 overflow-hidden py-0'>
+      <Card
+        data-card-hover='false'
+        className={cn(
+          'gap-0 overflow-hidden py-0',
+          variant === 'linkai' && 'linkai-wallet-recharge-card'
+        )}
+      >
         <CardHeader className='border-b p-3 !pb-3 sm:p-5 sm:!pb-5'>
           <Skeleton className='h-6 w-32' />
           <Skeleton className='mt-2 h-4 w-48' />
@@ -204,11 +214,32 @@ export function RechargeFormCard({
     <TitledCard
       title={t('Add Funds')}
       description={t('Choose an amount and payment method')}
-      icon={<WalletCards className='h-4 w-4' />}
+      icon={
+        variant === 'linkai' ? (
+          <CircleDollarSign className='linkai-wallet-recharge-icon' />
+        ) : (
+          <WalletCards className='h-4 w-4' />
+        )
+      }
       iconTone='success'
+      iconClassName={cn(
+        variant === 'linkai' && 'linkai-wallet-recharge-icon-shell'
+      )}
       disableHoverEffect
+      className={cn(variant === 'linkai' && 'linkai-wallet-recharge-card')}
+      headerClassName={cn(
+        variant === 'linkai' && 'linkai-wallet-recharge-header'
+      )}
+      contentClassName={cn(
+        'space-y-4 sm:space-y-6',
+        variant === 'linkai' && 'linkai-wallet-recharge-content'
+      )}
+      titleClassName={cn(variant === 'linkai' && 'linkai-wallet-card-title')}
+      descriptionClassName={cn(
+        variant === 'linkai' && 'linkai-wallet-card-description'
+      )}
       action={
-        onOpenBilling ? (
+        onOpenBilling && variant !== 'linkai' ? (
           <Button
             variant='outline'
             size='sm'
@@ -220,7 +251,6 @@ export function RechargeFormCard({
           </Button>
         ) : null
       }
-      contentClassName='space-y-4 sm:space-y-6'
     >
       {redemptionEnabled && (
         <div className='animate-in fade-in-0 slide-in-from-bottom-2 duration-500 motion-reduce:animate-none'>
@@ -272,7 +302,7 @@ export function RechargeFormCard({
                   <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                     {t('Amount')}
                   </Label>
-                  <div className='grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4'>
+                  <div className='linkai-wallet-preset-grid grid grid-cols-2 gap-1.5 sm:gap-3 md:grid-cols-4'>
                     {presetAmounts.map((preset) => {
                       const discount =
                         preset.discount ||
@@ -294,7 +324,7 @@ export function RechargeFormCard({
                           key={preset.value}
                           variant='outline'
                           className={cn(
-                            'flex min-h-16 flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
+                            'linkai-wallet-preset flex min-h-16 flex-col items-start rounded-lg px-3 py-2.5 text-left whitespace-normal sm:min-h-[72px] sm:p-4',
                             selectedPreset === preset.value
                               ? 'border-foreground bg-foreground/5 dark:border-foreground dark:bg-foreground/10'
                               : 'border-muted'
@@ -334,7 +364,7 @@ export function RechargeFormCard({
                 >
                   {t('Custom Amount')}
                 </Label>
-                <div className='grid grid-cols-[minmax(0,1fr)_minmax(110px,0.55fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
+                <div className='linkai-wallet-custom-amount grid grid-cols-[minmax(0,1fr)_minmax(110px,0.55fr)] gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center'>
                   <Input
                     id='topup-amount'
                     type='number'
@@ -364,7 +394,7 @@ export function RechargeFormCard({
                   {t('Payment Method')}
                 </Label>
                 {hasStandardPaymentMethods ? (
-                  <div className='grid grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-3'>
+                  <div className='linkai-wallet-payment-grid grid grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-3'>
                     {topupInfo?.pay_methods?.map((method) => {
                       const minTopup = method.min_topup || 0
                       const disabled = minTopup > topupAmount
@@ -389,7 +419,7 @@ export function RechargeFormCard({
                               ? `${method.name}. ${disabledReason}`
                               : method.name
                           }
-                          className='min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
+                          className='linkai-wallet-payment-method min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
                         >
                           {paymentLoading === method.type ? (
                             <Loader2 className='h-4 w-4 animate-spin' />
@@ -445,7 +475,7 @@ export function RechargeFormCard({
                     <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
                       {t('Waffo Payment')}
                     </Label>
-                    <div className='grid grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-3'>
+                    <div className='linkai-wallet-payment-grid grid grid-cols-2 gap-1.5 sm:gap-3 lg:grid-cols-3'>
                       {waffoPayMethods?.map((method, index) => {
                         const loadingKey = `waffo-${index}`
                         const methodKey = `${method.payMethodType ?? 'unknown'}-${method.payMethodName ?? method.name}`
@@ -487,7 +517,7 @@ export function RechargeFormCard({
                                 ? `${method.name}. ${disabledReason}`
                                 : method.name
                             }
-                            className='min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
+                            className='linkai-wallet-payment-method min-h-14 min-w-0 justify-start gap-2 rounded-lg px-3 py-2 text-left'
                           >
                             {methodIcon}
                             <span className='flex min-w-0 flex-col items-start gap-0.5'>
@@ -542,9 +572,15 @@ export function RechargeFormCard({
       {redemptionEnabled ? (
         <div className='space-y-2.5 border-t pt-4 sm:space-y-3 sm:pt-6'>
           <div className='flex items-center gap-2'>
-            <IconBadge tone='warning' size='xs'>
-              <Gift />
-            </IconBadge>
+            {variant === 'linkai' ? (
+              <span className='linkai-wallet-gift-icon' aria-hidden='true'>
+                <Gift />
+              </span>
+            ) : (
+              <IconBadge tone='warning' size='xs'>
+                <Gift />
+              </IconBadge>
+            )}
             <Label
               htmlFor='redemption-code'
               className='text-muted-foreground text-xs font-medium tracking-wider uppercase'

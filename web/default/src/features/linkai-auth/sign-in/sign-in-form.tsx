@@ -44,6 +44,7 @@ export function LinkAiSignInForm({ state }: LinkAiSignInFormProps) {
     isLoading,
     isPasskeyLoading,
     onSubmit,
+    passkeyAvailable,
     requiresLegalConsent,
     setAgreedToLegal,
     status,
@@ -135,17 +136,19 @@ export function LinkAiSignInForm({ state }: LinkAiSignInFormProps) {
           {t('Sign in')}
         </button>
 
-        <button
-          type='button'
-          onClick={handlePasskeyLogin}
-          className='mt-4 flex h-[46px] w-full items-center justify-center rounded-full border border-[#2a2a2a] bg-[#1a1a1a] text-base text-white transition hover:border-[#7258ce] hover:bg-[#211a31] disabled:cursor-not-allowed disabled:opacity-50'
-          disabled={isPasskeyLoading}
-        >
-          {isPasskeyLoading && (
-            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-          )}
-          {t('Sign in with Passkey')}
-        </button>
+        {passkeyAvailable && (
+          <button
+            type='button'
+            onClick={handlePasskeyLogin}
+            className='mt-4 flex h-[46px] w-full items-center justify-center rounded-full border border-[#2a2a2a] bg-[#1a1a1a] text-base text-white transition hover:border-[#7258ce] hover:bg-[#211a31] disabled:cursor-not-allowed disabled:opacity-50'
+            disabled={isPasskeyLoading}
+          >
+            {isPasskeyLoading && (
+              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+            )}
+            {t('Sign in with Passkey')}
+          </button>
+        )}
       </form>
     </Form>
   )

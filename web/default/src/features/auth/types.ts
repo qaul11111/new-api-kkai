@@ -113,6 +113,7 @@ export interface SystemStatus {
     linuxdo_oauth?: boolean
     linuxdo_client_id?: string
     telegram_oauth?: boolean
+    telegram_bot_name?: string
     passkey_login?: boolean
     wechat_login?: boolean
     wechat_qrcode?: string
@@ -159,6 +160,7 @@ export interface SystemStatus {
   linuxdo_oauth?: boolean
   linuxdo_client_id?: string
   telegram_oauth?: boolean
+  telegram_bot_name?: string
   passkey_login?: boolean
   wechat_login?: boolean
   wechat_qrcode?: string
@@ -212,6 +214,22 @@ export interface CustomOAuthProviderInfo {
   client_id: string
   authorization_endpoint: string
   scopes: string
+}
+
+/**
+ * Authorization payload delivered by the official Telegram login widget.
+ * The backend verifies `hash` against the configured bot token, so every
+ * field Telegram provides must be forwarded unchanged.
+ */
+export interface TelegramAuthPayload {
+  id: number | string
+  auth_date: number | string
+  hash: string
+  first_name?: string
+  last_name?: string
+  username?: string
+  photo_url?: string
+  lang?: string
 }
 
 // ============================================================================

@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { GlobeIcon, PaperclipIcon, Trash2Icon } from 'lucide-react'
+import { Globe2Icon, PaperclipIcon, Trash2Icon } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -94,7 +94,7 @@ export function PlaygroundInputTools({
 
   return (
     <>
-      <PromptInputTools className='bg-background/70 border-border/60 rounded-lg border p-1 shadow-xs'>
+      <PromptInputTools className='gap-0.5 bg-transparent p-0 shadow-none sm:gap-1'>
         <Tooltip>
           <DropdownMenu>
             <TooltipTrigger
@@ -103,13 +103,13 @@ export function PlaygroundInputTools({
                   render={
                     <PromptInputButton
                       aria-label={t('Attach')}
-                      className='text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+                      className='size-9 text-[#8b8b8b] hover:bg-white/5 hover:text-white'
                       disabled={disabled}
                       variant='ghost'
                     />
                   }
                 >
-                  <PaperclipIcon size={16} />
+                  <PaperclipIcon className='size-[18px]' aria-hidden='true' />
                 </DropdownMenuTrigger>
               }
             />
@@ -135,12 +135,12 @@ export function PlaygroundInputTools({
             render={
               <PromptInputButton
                 aria-label={t('Search')}
-                className='text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+                className='size-9 text-[#8b8b8b] hover:bg-white/5 hover:text-white'
                 disabled={disabled}
                 onClick={handleSearchAction}
                 variant='ghost'
               >
-                <GlobeIcon size={16} />
+                <Globe2Icon className='size-[18px]' aria-hidden='true' />
               </PromptInputButton>
             }
           />
@@ -162,12 +162,12 @@ export function PlaygroundInputTools({
             render={
               <PromptInputButton
                 aria-label={t('Clear chat history')}
-                className='text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium'
+                className='size-9 text-[#8b8b8b] hover:bg-red-500/10 hover:text-red-300'
                 disabled={disabled || !hasMessages || !onClearMessages}
                 onClick={() => setClearConfirmOpen(true)}
                 variant='ghost'
               >
-                <Trash2Icon size={16} />
+                <Trash2Icon className='size-[18px]' aria-hidden='true' />
               </PromptInputButton>
             }
           />

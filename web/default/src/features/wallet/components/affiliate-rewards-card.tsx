@@ -26,6 +26,7 @@ import { IconBadge } from '@/components/ui/icon-badge'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatQuota } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 import type { UserWalletData } from '../types'
 
@@ -35,6 +36,7 @@ interface AffiliateRewardsCardProps {
   onTransfer: () => void
   complianceConfirmed?: boolean
   loading?: boolean
+  variant?: 'default' | 'linkai'
 }
 
 export function AffiliateRewardsCard({
@@ -43,11 +45,18 @@ export function AffiliateRewardsCard({
   onTransfer,
   complianceConfirmed = true,
   loading,
+  variant = 'default',
 }: AffiliateRewardsCardProps) {
   const { t } = useTranslation()
   if (loading) {
     return (
-      <Card data-card-hover='false' className='bg-muted/20 py-0'>
+      <Card
+        data-card-hover='false'
+        className={cn(
+          'bg-muted/20 py-0',
+          variant === 'linkai' && 'linkai-wallet-rewards-card'
+        )}
+      >
         <CardContent className='grid gap-4 p-3 sm:p-4 lg:grid-cols-[minmax(220px,1fr)_minmax(220px,0.72fr)_minmax(320px,1.15fr)] lg:items-center'>
           <div>
             <Skeleton className='h-5 w-32' />
@@ -63,12 +72,24 @@ export function AffiliateRewardsCard({
   const hasRewards = (user?.aff_quota ?? 0) > 0
 
   return (
-    <Card data-card-hover='false' className='bg-muted/20 py-0'>
+    <Card
+      data-card-hover='false'
+      className={cn(
+        'bg-muted/20 py-0',
+        variant === 'linkai' && 'linkai-wallet-rewards-card'
+      )}
+    >
       <CardContent className='grid gap-3 p-3 sm:gap-4 sm:p-4 lg:grid-cols-[minmax(200px,1fr)_minmax(180px,0.65fr)_minmax(280px,1fr)] lg:items-center'>
         <div className='flex min-w-0 items-center gap-2.5'>
-          <IconBadge tone='chart-3'>
-            <Share2 />
-          </IconBadge>
+          {variant === 'linkai' ? (
+            <span className='linkai-wallet-gift-icon' aria-hidden='true'>
+              <Share2 />
+            </span>
+          ) : (
+            <IconBadge tone='chart-3'>
+              <Share2 />
+            </IconBadge>
+          )}
           <div className='min-w-0'>
             <h3 className='truncate text-sm font-semibold'>
               {t('Referral Program')}

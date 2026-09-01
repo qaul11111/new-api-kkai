@@ -215,12 +215,18 @@ export async function getSelfSubscriptions(): Promise<
 export async function getSelfSubscriptionFull(): Promise<
   ApiResponse<SelfSubscriptionData>
 > {
-  const res = await api.get('/api/subscription/self')
+  const res = await api.get('/api/subscription/self', {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data
 }
 
 export async function getPublicPlans(): Promise<ApiResponse<PlanRecord[]>> {
-  const res = await api.get('/api/subscription/plans')
+  const res = await api.get('/api/subscription/plans', {
+    skipBusinessError: true,
+    skipErrorHandler: true,
+  })
   return res.data
 }
 
