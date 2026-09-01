@@ -33,7 +33,6 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -52,7 +51,6 @@ import {
 } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import { ACCOUNT_TYPE_OPTIONS, type AccountType } from '@/lib/account-type'
 
 import {
   SettingsForm,
@@ -61,10 +59,11 @@ import {
 } from '../components/settings-form-layout'
 import { SettingsPageActionsPortal } from '../components/settings-page-context'
 import { safeJsonParse } from '../utils/json-parser'
+import { AccountTypeGroupAccessEditor } from './account-type-group-access-editor'
 import { GroupRatioVisualEditor } from './group-ratio-visual-editor'
 import { GroupSpecialUsableRulesEditor } from './group-special-usable-editor'
 
-type GroupFormValues = {
+export type GroupFormValues = {
   GroupRatio: string
   TopupGroupRatio: string
   UserUsableGroups: string
@@ -129,46 +128,6 @@ export const GroupRatioForm = memo(function GroupRatioForm({
       ]),
     ]
   }, [watchedGroupRatio, watchedUserUsableGroups, watchedTopupGroupRatio])
-  const usableGroupDescriptions = useMemo(
-    () =>
-      safeJsonParse<Record<string, string>>(watchedUserUsableGroups, {
-        fallback: {},
-        silent: true,
-      }),
-    [watchedUserUsableGroups]
-  )
-  const accountTypeGroupMapping = safeJsonParse<
-    Record<AccountType, Record<string, string>>
-  >(form.watch('AccountTypeGroupMapping'), {
-    fallback: { consumer: {}, business: {} },
-    silent: true,
-  })
-
-  const setAccountTypeGroup = useCallback(
-    (accountType: AccountType, group: string, enabled: boolean) => {
-      const current = safeJsonParse<
-        Record<AccountType, Record<string, string>>
-      >(form.getValues('AccountTypeGroupMapping'), {
-        fallback: { consumer: {}, business: {} },
-        silent: true,
-      })
-      const next = {
-        consumer: { ...current.consumer },
-        business: { ...current.business },
-      }
-      if (enabled) {
-        next[accountType][group] = usableGroupDescriptions[group] || group
-      } else {
-        delete next[accountType][group]
-      }
-      form.setValue('AccountTypeGroupMapping', JSON.stringify(next, null, 2), {
-        shouldDirty: true,
-        shouldValidate: true,
-      })
-    },
-    [form, usableGroupDescriptions]
-  )
-
   return (
     <div className='space-y-6'>
       <div className='flex flex-wrap justify-end gap-2'>
@@ -204,89 +163,11 @@ export const GroupRatioForm = memo(function GroupRatioForm({
             {isSaving ? t('Saving...') : t('Save group ratios')}
           </Button>
         </SettingsPageActionsPortal>
-        <div className='space-y-4 rounded-lg border p-4'>
-          <FormField
-            control={form.control}
-            name='AccountTypeSegmentationEnabled'
-            render={({ field }) => (
-              <SettingsSwitchItem>
-                <SettingsSwitchContent>
-                  <FormLabel>{t('Account-type model access')}</FormLabel>
-                  <FormDescription>
-                    {t(
-                      'When enabled, each account type can use only the selected model groups. Empty selections deny all model access.'
-                    )}
-                  </FormDescription>
-                </SettingsSwitchContent>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </SettingsSwitchItem>
-            )}
-          />
-
-          {editMode === 'visual' ? (
-            <div className='grid gap-4 lg:grid-cols-2'>
-              {ACCOUNT_TYPE_OPTIONS.map((option) => (
-                <div key={option.value} className='rounded-lg border p-4'>
-                  <div className='text-sm font-medium'>
-                    {t(option.labelKey)}
-                  </div>
-                  <div className='text-muted-foreground mt-1 text-xs'>
-                    {t('Allowed model groups')}
-                  </div>
-                  {groupNames.length > 0 ? (
-                    <div className='mt-3 grid gap-2 sm:grid-cols-2'>
-                      {groupNames.map((group) => (
-                        <label
-                          key={group}
-                          className='flex items-center gap-2 rounded-md border px-3 py-2 text-sm'
-                        >
-                          <Checkbox
-                            checked={Boolean(
-                              accountTypeGroupMapping[option.value]?.[group]
-                            )}
-                            onCheckedChange={(checked) =>
-                              setAccountTypeGroup(
-                                option.value,
-                                group,
-                                checked === true
-                              )
-                            }
-                          />
-                          <span className='truncate'>{group}</span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className='text-muted-foreground mt-3 text-xs'>
-                      {t(
-                        'No model groups are configured yet. Add groups under selectable groups first.'
-                      )}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <FormField
-              control={form.control}
-              name='AccountTypeGroupMapping'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Allowed model groups')}</FormLabel>
-                  <FormControl>
-                    <Textarea rows={10} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-        </div>
+        <AccountTypeGroupAccessEditor
+          form={form}
+          editMode={editMode}
+          groupNames={groupNames}
+        />
         {editMode === 'visual' ? (
           <div className='space-y-6'>
             <GroupRatioVisualEditor
