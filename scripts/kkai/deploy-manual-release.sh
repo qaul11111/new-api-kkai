@@ -20,11 +20,11 @@ sha256_file() {
 }
 
 [[ $# -eq 2 ]] ||
-  die "usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json"
+  die "usage: deploy-manual-release.sh --stage|--promote|--rollback|--finalize METADATA.json"
 action=$1
 case "${action}" in
-  --stage | --promote | --rollback) ;;
-  *) die "usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json" ;;
+  --stage | --promote | --rollback | --finalize) ;;
+  *) die "usage: deploy-manual-release.sh --stage|--promote|--rollback|--finalize METADATA.json" ;;
 esac
 METADATA="$(cd -- "$(dirname -- "$2")" && pwd)/$(basename -- "$2")"
 readonly action METADATA
@@ -97,6 +97,13 @@ fi
 if [[ "${action}" == --rollback ]]; then
   ssh "${SSH_OPTIONS[@]}" "${HOST}" \
     sudo -n /usr/local/sbin/kkai-newapi-manual-deploy rollback \
+      --expected-source-sha "${source_sha}"
+  exit 0
+fi
+
+if [[ "${action}" == --finalize ]]; then
+  ssh "${SSH_OPTIONS[@]}" "${HOST}" \
+    sudo -n /usr/local/sbin/kkai-newapi-manual-deploy finalize \
       --expected-source-sha "${source_sha}"
   exit 0
 fi

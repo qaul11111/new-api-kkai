@@ -118,7 +118,7 @@ contains 'readonly HOST=ubuntu@51.81.154.107' "${DEPLOY_SCRIPT}" || fail "manual
 contains 'readonly KEY=/Users/wxl/.ssh/sys3_wsx_new' "${DEPLOY_SCRIPT}" || fail "manual deploy does not use the pinned sys3 key"
 contains 'StrictHostKeyChecking=yes' "${DEPLOY_SCRIPT}" || fail "manual deploy does not require the pinned sys3 host key"
 contains 'ProxyCommand=none' "${DEPLOY_SCRIPT}" || fail "manual deploy may use an SSH proxy"
-contains 'usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json' "${DEPLOY_SCRIPT}" ||
+contains 'usage: deploy-manual-release.sh --stage|--promote|--rollback|--finalize METADATA.json' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not require an explicit deployment action"
 contains 'kkai-newapi-manual-deploy stage' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not stage through the production controller"
@@ -126,6 +126,8 @@ contains 'kkai-newapi-manual-deploy promote' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not promote through the production controller"
 contains 'kkai-newapi-manual-deploy rollback' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not roll back through the production controller"
+contains 'kkai-newapi-manual-deploy finalize' "${DEPLOY_SCRIPT}" ||
+  fail "manual deploy does not finalize through the production controller"
 contains '--schema-contract "${schema_contract}"' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not bind release metadata to the staged schema contract"
 ! contains 'kkai-newapi-manual-deploy deploy' "${DEPLOY_SCRIPT}" ||
@@ -137,7 +139,7 @@ contains '--expected-infra-sha "${KKAI_INFRA_SHA}"' "${DEPLOY_SCRIPT}" ||
 contains '--deployment-protocol "${KKAI_DEPLOYMENT_PROTOCOL}"' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not pin the deployment protocol"
 contains 'archive checksum mismatch' "${DEPLOY_SCRIPT}" || fail "manual deploy omits local archive verification"
-contains 'KKAI_INFRA_SHA=fc6b8c180b236319416dddbf55fc24aa0728dbe9' "${DEPLOY_CONTRACT}" ||
+contains 'KKAI_INFRA_SHA=999325bbd446ea8a47bc2a513833fa5c8f5af027' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the approved infrastructure commit"
 contains 'KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the staged protocol"

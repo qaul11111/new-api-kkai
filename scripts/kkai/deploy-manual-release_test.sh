@@ -22,7 +22,7 @@ mkdir -p -- "${mock_bin}"
 # shellcheck source=manual-deployment-contract.env
 source "${CONTRACT}"
 readonly KKAI_INFRA_SHA KKAI_DEPLOYMENT_PROTOCOL
-readonly EXPECTED_INFRA_SHA=fc6b8c180b236319416dddbf55fc24aa0728dbe9
+readonly EXPECTED_INFRA_SHA=999325bbd446ea8a47bc2a513833fa5c8f5af027
 readonly EXPECTED_DEPLOYMENT_PROTOCOL=router-v3-staged
 readonly EXPECTED_HOST=ubuntu@51.81.154.107
 export KKAI_TEST_EXPECTED_INFRA_SHA="${KKAI_INFRA_SHA}"
@@ -81,6 +81,10 @@ case "$*" in
     ;;
   *'/kkai-newapi-manual-deploy rollback '*)
     printf 'KKAI_ROLLBACK_RESULT=rolled-back\n'
+    exit 0
+    ;;
+  *'/kkai-newapi-manual-deploy finalize '*)
+    printf 'KKAI_FINALIZE_RESULT=stable\n'
     exit 0
     ;;
   *)
@@ -151,7 +155,7 @@ test_requires_explicit_stage_action() {
   )"; then
     fail "legacy one-step invocation unexpectedly succeeded"
   fi
-  grep -F 'usage: deploy-manual-release.sh --stage|--promote|--rollback METADATA.json' <<< "${output}" >/dev/null ||
+  grep -F 'usage: deploy-manual-release.sh --stage|--promote|--rollback|--finalize METADATA.json' <<< "${output}" >/dev/null ||
     fail "usage does not require an explicit deployment action"
   [[ ! -s "${call_log}" ]] || fail "invalid invocation made a remote call"
 }
@@ -244,7 +248,7 @@ test_successful_preflight_precedes_upload_and_stage() {
     fail "legacy deploy action was invoked"
 }
 
-test_promote_and_rollback_are_sha_pinned_without_upload() {
+test_promote_rollback_and_finalize_are_sha_pinned_without_upload() {
   local output
 
   : > "${call_log}"
@@ -270,6 +274,18 @@ test_promote_and_rollback_are_sha_pinned_without_upload() {
   grep -F -- "/kkai-newapi-manual-deploy rollback --expected-source-sha ${source_sha}" "${call_log}" >/dev/null ||
     fail "rollback was not pinned to the release source SHA"
   ! grep -q '^scp ' "${call_log}" || fail "rollback unexpectedly uploaded an archive"
+
+  : > "${call_log}"
+  output="$(
+    PATH="${mock_bin}:${PATH}" \
+      KKAI_TEST_LOG="${call_log}" \
+      "${DEPLOY_SCRIPT}" --finalize "${metadata}"
+  )"
+  grep -Fx 'KKAI_FINALIZE_RESULT=stable' <<< "${output}" >/dev/null ||
+    fail "finalize output was not preserved"
+  grep -F -- "/kkai-newapi-manual-deploy finalize --expected-source-sha ${source_sha}" "${call_log}" >/dev/null ||
+    fail "finalize was not pinned to the release source SHA"
+  ! grep -q '^scp ' "${call_log}" || fail "finalize unexpectedly uploaded an archive"
 }
 
 test_contract_pins_staged_controller
@@ -280,6 +296,6 @@ test_preflight_output_must_match_contract
 test_preflight_protocol_must_match_contract
 test_preflight_schema_contract_must_match_release
 test_successful_preflight_precedes_upload_and_stage
-test_promote_and_rollback_are_sha_pinned_without_upload
+test_promote_rollback_and_finalize_are_sha_pinned_without_upload
 
 echo 'New API manual deploy client tests passed'

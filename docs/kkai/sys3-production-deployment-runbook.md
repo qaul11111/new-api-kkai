@@ -4,7 +4,7 @@
 >
 > 文档目标：让应用发布可重复、可审计、可回滚，并把数据库与业务数据安全放在发布速度之前。
 >
-> 最后核对日期：2026-09-01
+> 最后核对日期：2026-09-02
 
 ## 1. 安全目标与适用范围
 
@@ -34,13 +34,14 @@
 | 公网地址               | `https://omnitoken.online`                                                |
 | Compose 项目           | `kkai-newapi`                                                             |
 | Compose 文件           | `/srv/kkai/stacks/newapi/compose.yml`                                     |
-| 应用容器               | `sys3-newapi`                                                             |
+| 当前活动容器           | `sys3-newapi-green`                                                       |
+| 当前空闲槽位容器名     | `sys3-newapi`（首次 v9 发布后的旧容器不可作为回滚，finalize 后删除容器） |
 | PostgreSQL 容器        | `sys3-newapi-postgres`                                                    |
 | Redis 容器             | `sys3-newapi-redis`                                                       |
 | 应用监听               | `127.0.0.1:3000`                                                          |
-| 当前应用镜像           | `qaul11111/new-api-kkai:sys3-linkai-console-webcompat-20260831-1c8c37b86` |
-| 当前镜像后端基线       | `56145052eef44b10ee053fafeaf2eb54beeb1713`                                |
-| UI 变更提交            | `1c8c37b8631f2f4766df4f878e22699e5ca49eff`                                |
+| 当前应用镜像           | `kkai-newapi-manual:kkai-prod-20260901.1788278393-0776d1845`              |
+| 当前发布源码           | `0776d1845c80e43a22c9208448e0e9986c356cc3`                                |
+| 当前镜像 digest        | `sha256:3bbb0edbcb18d445fccff1a9cf4b8b3e05e364bbe4f203b099258ff300534276` |
 | 最近确认的 KKAI schema | v9（2026-09-01 受控迁移，精确 ledger `9|9`）                              |
 | schema 迁移制品源码    | `e1627a77bd9b7e6ec841df53098464038a8ce6b8`                                |
 | 当前应用角色           | `KKAI_NODE_ROLE=leader`                                                   |
@@ -49,25 +50,24 @@
 | Redis 持久化模式       | AOF 已开启（everysec），同时保留 RDB save 规则                            |
 | 候选 PostgreSQL 账号   | `newapi_readonly`；默认事务只读，实测写入被拒绝                           |
 | 候选 Redis 账号        | `newapi_readonly`；ACL 只读，实测写入被拒绝                               |
+| Caddy 管理端口         | 容器内部 `127.0.0.1:2019`；不对宿主或容器网络发布                         |
+| 已安装基础设施 commit  | `999325bbd446ea8a47bc2a513833fa5c8f5af027`                                |
 | 当前备份目录           | `/srv/kkai/backups/newapi`                                                |
-| 最近 Compose 备份      | `compose.yml.pre-linkai-console-webcompat-1c8c37b86-20260831T131338Z`     |
+| Mac 单份备份           | `/Users/wxl/Backups/LinkAI/sys3/current`；SHA-256 与隔离恢复已验证         |
 
-当前镜像是一次“旧后端 + 新前端”的兼容构建。镜像 OCI revision 标记的是旧后端提交，UI 提交体现在镜像名中。这种来源表达不完整，只能作为过渡状态；后续标准发布必须让源码提交、镜像 revision、发布元数据和实际制品一一对应。
+当前镜像由 GitHub Actions 在原生 `linux/amd64` runner 上从精确源码构建，OCI revision、release metadata、archive SHA-256、服务器镜像 ID 和在线容器已一一核对。
 
 ## 3. 当前存在的发布阻断项
 
-截至最后核对日期，sys3 已完成状态巡检、Mac 单份异机备份和真实隔离恢复验证，已安装固定基础设施提交的 fail-closed 控制器，并已通过单独授权、对应备份克隆演练和逐级门禁把 KKAI schema 从 v4 迁移到 v9；但它 **尚不具备本仓库规定的标准生产发布条件**：
+截至最后核对日期，sys3 已完成状态巡检、Mac 单份异机备份和真实隔离恢复验证，KKAI schema 已受控迁移到 v9，蓝绿控制器已实现并真实完成一次 `stage` 与 `promote`。标准普通发布能力已经启用，但每次发布仍必须重新通过全部门禁：
 
-1. `/usr/local/sbin/kkai-newapi-manual-deploy` 当前只实现 `status` 和 `preflight`，`stage`、`promote`、`rollback` 会明确拒绝执行；
-2. sys3 当前是单应用实例 Compose，不具备只替换空闲槽位、候选只读验收、原版本原地待命的完整蓝绿结构；
+1. `preflight` 同时验证 schema v9、唯一 leader、运行时降权、应用写账号对全部 public 表/序列的权限，以及 Caddy 的真实 reload 能力；
+2. `stage` 只使用 PostgreSQL/Redis 只读账号，空闲槽位不运行 writer；
+3. `promote` 在停止旧 writer 前再次验证数据库写权限与 Caddy reload，然后执行零双写切换；
+4. `rollback` 只接受带 `bridge` 或 `feature` schema-contract 标签的旧镜像；不兼容镜像会在停止健康服务前被拒绝；
+5. `finalize` 只能在切流验收完成后运行，只删除已停止的旧容器，保留镜像、数据卷、Caddy 副本和 Mac 备份。
 
-schema v9 门禁已满足，不再是当前阻断项；当前阻断项仍是控制器和单实例拓扑尚未提供可验证的蓝绿发布与回滚状态机。
-
-因此，在下一次普通生产发布前必须先完成以下工作：
-
-- 在 sys3 基础设施仓库中补齐并验证蓝绿槽位、路由和控制器的 `stage`、`promote`、`rollback`；
-
-上述任一项未完成时，普通发布结论必须是 **STOP**。不得用裸 `docker compose up`、手工改镜像名或临时启动第二个 leader 来绕过门禁。紧急事故处置必须使用单独的 break-glass 方案和明确授权，不属于本手册的快速发布路径。
+首次 v9 发布之前的旧镜像不认识 migration v5–v9，因此不是当前发布的可用应用回滚点；它只可作为取证对象。当前服务恢复手段是重新启动已验证的新镜像；数据库恢复仍需独立明确授权。下一次标准发布时，当前 v9 镜像才可成为兼容回滚版本。
 
 ## 4. 发布类型决策
 
@@ -225,7 +225,7 @@ make newapi-status
 仓库约定的基础设施 contract 当前为：
 
 ```text
-KKAI_INFRA_SHA=fc6b8c180b236319416dddbf55fc24aa0728dbe9
+KKAI_INFRA_SHA=999325bbd446ea8a47bc2a513833fa5c8f5af027
 KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged
 ```
 
@@ -470,6 +470,8 @@ shasum -a 256 "$release_tar"
 - 本地 deploy client 明确固定指向 sys3，并使用独立密钥和 known_hosts；
 - SSH 强制 `BatchMode=yes`、固定 known_hosts、禁用 ProxyJump/ProxyCommand；
 - controller 的 preflight 成功；
+- Caddy 配置没有 `admin off`，管理端口只绑定容器回环地址，真实 no-change reload 成功；
+- `newapi` 对全部 public 表具备 `SELECT/INSERT/UPDATE/DELETE`，对全部 public 序列具备 `USAGE/SELECT/UPDATE`；
 - 空闲槽位使用 `KKAI_NODE_ROLE=standby-readonly`；
 - 空闲槽位使用 PostgreSQL 只读账号，数据库层强制只读；
 - 空闲槽位不拥有稳定别名、不接公网流量、不运行全局 writer。
@@ -485,7 +487,7 @@ cd "$app_repo"
 scripts/kkai/deploy-manual-release.sh --stage "$release_json"
 ```
 
-客户端固定为 sys3，控制器会校验基础设施 SHA、精确源码 SHA、镜像标签、schema v9、单 leader、Caddy 路由和运行时安全参数。不得绕过控制器替换正在服务的 leader。
+客户端固定为 sys3，控制器会校验基础设施 SHA、精确源码 SHA、镜像标签、schema v9、单 leader、应用写账号权限、Caddy 路由/真实 reload 和运行时安全参数。不得绕过控制器替换正在服务的 leader。
 
 stage 只能完成：
 
@@ -510,7 +512,7 @@ scripts/kkai/deploy-manual-release.sh --promote "$release_json"
 scripts/kkai/deploy-manual-release.sh --rollback "$release_json"
 ```
 
-本次部署不删除旧容器、旧镜像或 Mac 上的唯一数据库备份。旧容器保持停止状态，作为快速回滚源。
+切流时不删除旧容器、旧镜像或 Mac 上的唯一数据库备份。旧容器保持停止状态；只有其镜像带兼容 schema-contract 标签时才是快速回滚源，否则只作为取证对象。
 
 ## 13. 阶段 G：候选验收
 
@@ -593,14 +595,20 @@ done
 - 当前活动槽位仍健康；
 - 备份、异机副本和恢复演练门禁通过。
 
-promotion 命令必须严格使用当时有效的基础设施手册和 controller。应用仓库目前只提供 stage 客户端，因此本手册不猜测或伪造 promote 子命令。
+promotion 必须使用同一份经过校验的 metadata：
+
+```bash
+scripts/kkai/deploy-manual-release.sh --promote "$release_json"
+```
+
+客户端和 controller 都会把操作固定到 metadata 中的精确 source SHA；不得手写、猜测或绕过 promote 子命令。
 
 controller 必须以一个基础设施事务完成：
 
 1. 将候选切换为 serving/leader 所需的正式配置；
 2. 确保只有新活动槽位拥有稳定别名和 writer 能力；
 3. 切换公网流量；
-4. 将旧活动槽位保留为可回滚版本；
+4. 停止并保留旧活动槽位；仅在 schema-contract 兼容时标记为可回滚版本；
 5. 更新 release/rollback pointers；
 6. 输出新活动槽位、版本、digest 和 writer 所有权证据。
 
@@ -634,12 +642,18 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 
 - 新活动槽位健康，restart count 为 0；
 - 只有一个 leader/writer；
-- 旧槽位保持可回滚；
+- 旧槽位保持停止；若 controller 报告 `KKAI_ROLLBACK_RETAINED=true`，其 schema-contract 必须已验证兼容；
 - PostgreSQL、Redis 健康；
 - 5xx、登录失败率、延迟和资源占用没有异常抬升；
 - 没有 schema 错误、permission denied、重复任务或队列堆积。
 
-全部证据写回发布记录后，才可宣布完成。
+全部证据写回发布记录后，才可宣布切流验收通过。观察窗口通过后，用同一份 metadata 完成发布状态收口：
+
+```bash
+scripts/kkai/deploy-manual-release.sh --finalize "$release_json"
+```
+
+`finalize` 只删除已经停止的旧容器，不使用 `-v`，不删除旧镜像、任何 PostgreSQL/Redis/应用数据、Caddy 副本或 Mac 备份。成功输出 `KKAI_FINALIZE_RESULT=stable` 后，下一次发布才能复用空闲槽位。
 
 ## 16. 回滚规则
 
@@ -647,7 +661,7 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 
 - 本次发布没有改变数据库 schema 或业务数据；或
 - 旧镜像的 schema 契约明确兼容当前 schema；
-- 旧槽位仍健康且 digest 与证据单一致。
+- 旧槽位已停止、digest 与证据单一致，且镜像带 controller 接受的 `bridge` 或 `feature` schema-contract 标签。
 
 此时使用基础设施 controller 的正式 rollback 流程，把流量和唯一 writer 一起切回旧槽位。禁止只改代理、不改 writer，或只改容器标签。
 
@@ -671,13 +685,13 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 
 ## 17. 发布后清理与保留
 
-发布后只能做非破坏性整理：
+发布后只能做受控整理：
 
-- 保留当前活动 release、上一回滚 release 的镜像、archive 和 metadata；
+- 保留当前活动 release、上一兼容回滚 release 的镜像、archive 和 metadata；
 - 保留本次数据库 dump、SHA-256、Mac 上最新一份已验证的异机副本和发布证据；
 - 对日志中的敏感字段进行脱敏；
 - 关闭临时 SSH tunnel；
-- 不立即删除旧槽位、旧镜像或备份；
+- 在观察窗口内不删除旧槽位；验收后只允许用 `--finalize` 删除已停止容器，镜像与备份继续保留；
 - 不在同一发布窗口顺手执行数据库清理或 Docker volume prune。
 
 建议最低保留策略：
@@ -714,6 +728,8 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 - [ ] 用户已确认唯一 sys3 基础设施仓库；
 - [ ] `make newapi-status` 是本次刚执行的实时结果；
 - [ ] sys3 controller、infra SHA、协议均匹配；
+- [ ] Caddy 管理端口仅绑定容器回环，真实 reload 门禁通过；
+- [ ] 应用写账号对全部 public 表/序列权限门禁通过；
 - [ ] 生产分支为 `production/kkrich` 且完全干净；
 - [ ] 完整质量门禁通过；
 - [ ] 在线 schema 已只读观察并记录；
@@ -746,8 +762,9 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 - [ ] 专用测试账号的最小写路径正常；
 - [ ] PostgreSQL、Redis、应用健康；
 - [ ] 无重启循环、5xx 抬升、重复后台任务；
-- [ ] 旧槽位仍可回滚；
+- [ ] 旧槽位已停止，且只在 schema-contract 兼容时标记为可回滚；
 - [ ] 发布证据完整且不含 secret。
+- [ ] 观察窗口通过后执行 `--finalize`，状态回到 `stable`，镜像/卷/备份仍保留。
 
 ## 20. 相关文档
 
