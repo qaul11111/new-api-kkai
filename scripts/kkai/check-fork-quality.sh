@@ -45,7 +45,7 @@ if [[ $ACTUAL_BUN_VERSION != "$KKAI_BUN_VERSION" ]]; then
   exit 1
 fi
 
-if [[ ! -x "$ROOT/web/node_modules/.bin/oxlint" ]]; then
+if [[ ! -x "$ROOT/web/default/node_modules/.bin/oxlint" ]]; then
   echo "Frontend dependencies are missing; run 'cd web && bun install --frozen-lockfile'." >&2
   exit 1
 fi
@@ -116,7 +116,7 @@ printf '%s\n' '<!doctype html><title>quality baseline</title>' >"$BASE_TREE/web/
 printf '%s\n' '<!doctype html><title>quality baseline</title>' >"$BASE_TREE/web/classic/dist/index.html"
 
 echo "[7/9] Comparing default lint diagnostics with approved fork"
-OXLINT="$ROOT/web/node_modules/.bin/oxlint"
+OXLINT="$ROOT/web/default/node_modules/.bin/oxlint"
 set +e
 (
   cd "$BASE_TREE/web/default"
