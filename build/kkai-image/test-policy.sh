@@ -31,7 +31,7 @@ contains() {
 [[ -x "${DEPLOY_TEST}" ]] || fail "manual deploy client tests are missing or not executable"
 [[ -x "${FFMPEG_POLICY_TEST}" ]] || fail "FFmpeg source-build policy test is missing or not executable"
 
-ruby -ryaml -e 'YAML.safe_load_file(ARGV.fetch(0), aliases: true)' "${QUALITY_WORKFLOW}" >/dev/null ||
+ruby -ryaml -e 'YAML.safe_load(File.read(ARGV.fetch(0)), aliases: true)' "${QUALITY_WORKFLOW}" >/dev/null ||
   fail "invalid quality workflow YAML"
 if grep -Eq 'uses: [^ ]+@v[0-9]' "${QUALITY_WORKFLOW}"; then
   fail "quality workflow contains an unpinned action reference"
@@ -53,6 +53,8 @@ contains 'arguments[0] == "kkai-video-archive-once"' "${ENTRYPOINT_SOURCE}" ||
   fail "entrypoint does not dispatch the exact archive command"
 contains 'ARG KKAI_SCHEMA_CONTRACT=feature' "${DOCKERFILE}" ||
   fail "Dockerfile does not default to the feature schema contract"
+contains 'org.opencontainers.image.source="https://github.com/qaul11111/new-api-kkai"' "${DOCKERFILE}" ||
+  fail "runtime image does not identify the qaul11111 source repository"
 contains 'GOFLAGS=-tags=kkai_bridge' "${DOCKERFILE}" ||
   fail "Dockerfile cannot compile the explicit bridge schema contract"
 contains 'io.kkrich.schema-contract="${KKAI_SCHEMA_CONTRACT}"' "${DOCKERFILE}" ||
@@ -96,7 +98,9 @@ contains '--build-arg "http_proxy=${build_http_proxy}"' "${BUILD_SCRIPT}" ||
 contains '--build-arg "https_proxy=${build_https_proxy}"' "${BUILD_SCRIPT}" ||
   fail "manual build does not forward the lowercase HTTPS proxy into build stages"
 
-contains 'readonly HOST=sys1' "${DEPLOY_SCRIPT}" || fail "manual deploy does not use the primary sys1 route"
+contains 'readonly HOST=ubuntu@51.81.154.107' "${DEPLOY_SCRIPT}" || fail "manual deploy does not use the pinned sys3 route"
+contains 'readonly KEY=/Users/wxl/.ssh/sys3_wsx_new' "${DEPLOY_SCRIPT}" || fail "manual deploy does not use the pinned sys3 key"
+contains 'StrictHostKeyChecking=yes' "${DEPLOY_SCRIPT}" || fail "manual deploy does not require the pinned sys3 host key"
 contains 'ProxyCommand=none' "${DEPLOY_SCRIPT}" || fail "manual deploy may use an SSH proxy"
 contains 'usage: deploy-manual-release.sh --stage METADATA.json' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not require an explicit stage action"
@@ -113,7 +117,7 @@ contains '--expected-infra-sha "${KKAI_INFRA_SHA}"' "${DEPLOY_SCRIPT}" ||
 contains '--deployment-protocol "${KKAI_DEPLOYMENT_PROTOCOL}"' "${DEPLOY_SCRIPT}" ||
   fail "manual deploy does not pin the deployment protocol"
 contains 'archive checksum mismatch' "${DEPLOY_SCRIPT}" || fail "manual deploy omits local archive verification"
-contains 'KKAI_INFRA_SHA=2b4d149f4b8b778d6a3f2c997fd021b45484dad4' "${DEPLOY_CONTRACT}" ||
+contains 'KKAI_INFRA_SHA=30e142ce75291b9093805cf38a2da9b09d32c80a' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the approved infrastructure commit"
 contains 'KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged' "${DEPLOY_CONTRACT}" ||
   fail "manual deployment contract does not pin the staged protocol"

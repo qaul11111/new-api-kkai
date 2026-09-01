@@ -9,14 +9,14 @@ This is an AI API gateway/proxy built with Go. It aggregates 40+ upstream AI pro
 ## KKAI Manual Production Delivery (Mandatory)
 
 For every task involving KKAI production builds, releases, deployment status,
-blue-green slots, rollback, or `api.kkrich.ltd`:
+blue-green slots, rollback, or `omnitoken.online`:
 
-1. Read `/Users/tokk/Documents/Codex/runbooks/newapi-upgrade-and-deployment.md`.
+1. Read `/Users/wxl/Documents/DevProject/GPTProject/Omnitoken/kkai-infra-sys3/runbooks/newapi-upgrade-and-deployment.md`.
    It defines the normal fast path and when exceptional runbooks are required.
 2. Use the infrastructure checkout explicitly selected by the user and verify
    that it contains the documented status and manual deployment scripts. Never
    scan or compare historical clones during a release.
-3. From that confirmed checkout, run `make newapi-status` once before treating
+3. From the confirmed `kkai-infra-sys3` checkout, run `make newapi-status` once before treating
    the production version, active slot, or basic health as current. Never reuse
    mutable production state from an old chat.
 4. Build with `scripts/kkai/build-manual-release.sh`, then stage the exact

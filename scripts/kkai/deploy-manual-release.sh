@@ -62,13 +62,17 @@ archive="$(dirname -- "${METADATA}")/${archive_name}"
 [[ -f "${archive}" ]] || die "release archive is missing"
 [[ "$(sha256_file "${archive}")" == "${archive_sha256}" ]] || die "archive checksum mismatch"
 
-readonly HOST=sys1
-readonly KEY="${HOME}/.ssh/ovh_sys1"
+readonly HOST=ubuntu@51.81.154.107
+readonly KEY=/Users/wxl/.ssh/sys3_wsx_new
+readonly KNOWN_HOSTS=/Users/wxl/.ssh/known_hosts_sys3
 readonly REMOTE_ARCHIVE="/tmp/newapi-manual-${version}.tar"
 readonly -a SSH_OPTIONS=(
   -i "${KEY}"
   -o BatchMode=yes
   -o ConnectTimeout=12
+  -o IdentitiesOnly=yes
+  -o StrictHostKeyChecking=yes
+  -o "UserKnownHostsFile=${KNOWN_HOSTS}"
   -o ProxyCommand=none
   -o ProxyJump=none
   -o KexAlgorithms=curve25519-sha256

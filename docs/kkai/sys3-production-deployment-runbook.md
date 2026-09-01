@@ -4,7 +4,7 @@
 >
 > 文档目标：让应用发布可重复、可审计、可回滚，并把数据库与业务数据安全放在发布速度之前。
 >
-> 最后核对日期：2026-08-31
+> 最后核对日期：2026-09-01
 
 ## 1. 安全目标与适用范围
 
@@ -18,14 +18,14 @@
 - 不在候选实例上使用可写数据库账号；
 - 不在候选验收通过前切换公网流量；
 - 不删除当前版本、回滚版本、数据库卷或 Redis 卷；
-- 每次发布前生成并验证 PostgreSQL、应用数据和 Redis 备份，同时保留加密异机副本；
+- 每次发布前生成并验证 PostgreSQL、应用数据和 Redis 备份，同时在启用 FileVault 的 Mac 上原子保留一份已验证异机副本；
 - 任一证据缺失、版本不一致或健康检查失败时立即停止，不带病上线。
 
 数据库迁移、数据修复、批量业务操作、Redis 数据结构升级不属于本手册的普通发布范围，必须使用独立方案、独立授权和独立维护窗口。
 
 ## 2. 当前生产基线
 
-以下内容只是 2026-08-31 的已知基线。每次发布都必须重新读取在线状态，不能把本表当作实时状态。
+以下内容只是 2026-09-01 的已知基线。每次发布都必须重新读取在线状态，不能把本表当作实时状态。
 
 | 项目                   | 已知值                                                                    |
 | ---------------------- | ------------------------------------------------------------------------- |
@@ -46,6 +46,8 @@
 | 应用持久化目录         | `/srv/kkai/data/apps/newapi` -> 容器 `/data`                              |
 | Redis 持久化目录       | `/srv/kkai/data/apps/newapi-redis` -> 容器 `/data`                        |
 | Redis 持久化模式       | AOF 已开启（everysec），同时保留 RDB save 规则                            |
+| 候选 PostgreSQL 账号   | `newapi_readonly`；默认事务只读，实测写入被拒绝                           |
+| 候选 Redis 账号        | `newapi_readonly`；ACL 只读，实测写入被拒绝                               |
 | 当前备份目录           | `/srv/kkai/backups/newapi`                                                |
 | 最近 Compose 备份      | `compose.yml.pre-linkai-console-webcompat-1c8c37b86-20260831T131338Z`     |
 
@@ -53,22 +55,15 @@
 
 ## 3. 当前存在的发布阻断项
 
-截至最后核对日期，sys3 **尚不具备本仓库规定的标准生产发布条件**：
+截至最后核对日期，sys3 已完成状态巡检、Mac 单份异机备份和真实隔离恢复验证，并已安装固定基础设施提交的 fail-closed 控制器；但它 **尚不具备本仓库规定的标准生产发布条件**：
 
-1. sys3 未安装 `/usr/local/sbin/kkai-newapi-manual-deploy` 蓝绿发布控制器；
-2. 仓库的 `scripts/kkai/deploy-manual-release.sh` 当前固定连接 `sys1`，不能直接用于 sys3；
-3. 项目要求先阅读的全局手册 `/Users/tokk/Documents/Codex/runbooks/newapi-upgrade-and-deployment.md` 在当前工作站不存在；
-4. sys3 当前是单应用实例 Compose，不具备只替换空闲槽位、候选只读验收、原版本原地待命的完整蓝绿结构；
-5. `/srv/kkai/backups` 与 PostgreSQL 数据位于同一台服务器、同一系统盘，不能抵御整机或磁盘故障；
-6. 最近确认的 schema 是 v4，而当前正式构建契约只覆盖 `bridge=(7,8,7)` 和 `feature=(8,8,8)`。
+1. `/usr/local/sbin/kkai-newapi-manual-deploy` 当前只实现 `status` 和 `preflight`，`stage`、`promote`、`rollback` 会明确拒绝执行；
+2. sys3 当前是单应用实例 Compose，不具备只替换空闲槽位、候选只读验收、原版本原地待命的完整蓝绿结构；
+3. 最近确认的 schema 是 v4，而当前正式构建契约只覆盖 `bridge=(7,8,7)` 和 `feature=(8,8,8)`。
 
 因此，在下一次普通生产发布前必须先完成以下工作：
 
-- 在用户确认的 sys3 基础设施仓库中安装并验证蓝绿发布控制器；
-- 将部署客户端安全地参数化为 sys3，并同步更新测试和固定的基础设施 commit；
-- 恢复或迁移全局部署手册，使操作员能读取唯一有效版本；
-- 为候选槽位配置 PostgreSQL 只读账号，且数据库层设置 `default_transaction_read_only=on`；
-- 配置加密异机备份，并至少完成一次可验证的隔离恢复演练；
+- 在 sys3 基础设施仓库中补齐并验证蓝绿槽位、路由和控制器的 `stage`、`promote`、`rollback`；
 - 单独规划 schema v4 到受支持版本的迁移。迁移不得由普通发布顺带执行。
 
 上述任一项未完成时，普通发布结论必须是 **STOP**。不得用裸 `docker compose up`、手工改镜像名或临时启动第二个 leader 来绕过门禁。紧急事故处置必须使用单独的 break-glass 方案和明确授权，不属于本手册的快速发布路径。
@@ -171,7 +166,7 @@ scripts/kkai/check-fork-quality.sh --full
 每次发布都必须先完整阅读：
 
 ```text
-/Users/tokk/Documents/Codex/runbooks/newapi-upgrade-and-deployment.md
+/Users/wxl/Documents/DevProject/GPTProject/Omnitoken/kkai-infra-sys3/runbooks/newapi-upgrade-and-deployment.md
 ```
 
 文件不存在、无法读取或存在多个冲突版本时立即停止。不能依赖聊天记录或记忆补全命令。
@@ -201,7 +196,7 @@ make newapi-status
 仓库约定的基础设施 contract 当前为：
 
 ```text
-KKAI_INFRA_SHA=2b4d149f4b8b778d6a3f2c997fd021b45484dad4
+KKAI_INFRA_SHA=30e142ce75291b9093805cf38a2da9b09d32c80a
 KKAI_DEPLOYMENT_PROTOCOL=router-v3-staged
 ```
 
@@ -352,6 +347,16 @@ Redis 备份至少需要：
 
 在异机备份方案落地前，不得把“同机 dump 已完成”标记为数据安全门禁通过。
 
+当前异机目标采用操作员 Mac，Mac 最终只保留一份“最新且已验证”的完整备份包。轮换必须原子化：
+
+1. 新备份先写入独立临时目录，不能覆盖当前有效备份；
+2. 完成文件完整性、SHA-256 和恢复可读性检查；
+3. 校验失败时删除失败的新包，继续保留旧包；
+4. 校验成功后将新包原子切换为 `current`；
+5. 只有切换成功后才能删除旧包。
+
+轮换过程中会短暂存在新旧两份，最终稳定状态只有一份。禁止先删除旧包再下载新包，否则传输或校验失败时会失去唯一异机副本。以当前数据规模，每份完整备份保守按 500 MB 预留。
+
 ### 10.5 恢复演练
 
 普通应用发布要求最近 7 天内至少有一次成功的自动/人工隔离恢复演练。涉及 schema 迁移时，必须针对本次新 dump 单独演练。
@@ -422,7 +427,7 @@ shasum -a 256 "$release_tar"
 正式执行前必须确认：
 
 - sys3 已安装经过固定 infra SHA 验证的 `/usr/local/sbin/kkai-newapi-manual-deploy`；
-- 本地 deploy client 明确指向 sys3，而不是当前硬编码的 sys1；
+- 本地 deploy client 明确固定指向 sys3，并使用独立密钥和 known_hosts；
 - SSH 强制 `BatchMode=yes`、固定 known_hosts、禁用 ProxyJump/ProxyCommand；
 - controller 的 preflight 成功；
 - 空闲槽位使用 `KKAI_NODE_ROLE=standby-readonly`；
@@ -433,14 +438,14 @@ shasum -a 256 "$release_tar"
 
 ### 12.2 Stage
 
-当 sys3 客户端改造完成后，按全局手册执行同等命令：
+只有当控制器补齐蓝绿 stage 能力、全部门禁通过并取得当次发布授权后，才按全局手册执行：
 
 ```bash
 cd "$app_repo"
 scripts/kkai/deploy-manual-release.sh --stage "$release_json"
 ```
 
-注意：仓库当前版本的该脚本仍固定为 sys1；在 sys3 适配合并并验证前，不得运行此命令指望它部署 sys3。
+注意：客户端虽然已固定为 sys3，但当前控制器会对 `stage` fail closed。不得修改脚本或绕过控制器来替换正在服务的 leader。
 
 stage 只能完成：
 
@@ -615,7 +620,7 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 发布后只能做非破坏性整理：
 
 - 保留当前活动 release、上一回滚 release 的镜像、archive 和 metadata；
-- 保留本次数据库 dump、SHA-256、异机副本和发布证据；
+- 保留本次数据库 dump、SHA-256、Mac 上最新一份已验证的异机副本和发布证据；
 - 对日志中的敏感字段进行脱敏；
 - 关闭临时 SSH tunnel；
 - 不立即删除旧槽位、旧镜像或备份；
@@ -625,8 +630,8 @@ curl --fail --silent --show-error --output /dev/null "$public_base/about"
 
 - 当前与回滚制品：至少保留到后两个发布均稳定；
 - 发布证据：至少 180 天；
-- 发布前数据库备份：至少 30 天，并按日/周/月策略保留异机副本；
-- schema 迁移前备份：长期保留，直到迁移后稳定期和审计期都结束。
+- Mac 异机数据备份：最终只保留最新一份，必须按上一节的校验后原子轮换；
+- schema 迁移前备份：在迁移稳定验收前作为 Mac 唯一有效备份，不得被普通发布备份提前轮换。
 
 实际保留策略应由基础设施备份政策统一执行，不能依靠人工记忆清理。
 
