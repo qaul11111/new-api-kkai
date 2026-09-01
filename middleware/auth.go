@@ -33,6 +33,14 @@ func validUserInfo(username string, role int) bool {
 	return true
 }
 
+func setUserAccessContext(c *gin.Context, userGroup string, accountType string) {
+	common.SetContextKey(c, constant.ContextKeyUserGroup, userGroup)
+	service.SetUserAccessProfileContext(c, service.UserAccessProfile{
+		UserGroup:   userGroup,
+		AccountType: accountType,
+	})
+}
+
 func authHelper(c *gin.Context, minRole int) {
 	authHelperWithOptions(c, minRole, false)
 }
@@ -44,6 +52,7 @@ func authHelperWithOptions(c *gin.Context, minRole int, allowSessionWithoutUserH
 	id := session.Get("id")
 	status := session.Get("status")
 	group := session.Get("group")
+	accountType := common.AccountTypeConsumer
 	useAccessToken := false
 	if username != nil {
 		user, err := loadLiveSessionUser(session)
@@ -56,6 +65,7 @@ func authHelperWithOptions(c *gin.Context, minRole int, allowSessionWithoutUserH
 		id = user.Id
 		status = user.Status
 		group = user.Group
+		accountType = user.AccountType
 	}
 	if username == nil {
 		// Check access token
@@ -100,6 +110,7 @@ func authHelperWithOptions(c *gin.Context, minRole int, allowSessionWithoutUserH
 			id = user.Id
 			status = user.Status
 			group = user.Group
+			accountType = user.AccountType
 			useAccessToken = true
 		} else {
 			c.JSON(http.StatusOK, gin.H{
@@ -170,7 +181,7 @@ func authHelperWithOptions(c *gin.Context, minRole int, allowSessionWithoutUserH
 	c.Set("role", role)
 	c.Set("id", id)
 	c.Set("group", group)
-	c.Set("user_group", group)
+	setUserAccessContext(c, group.(string), accountType)
 	c.Set("use_access_token", useAccessToken)
 
 	// 管理/root 写操作审计兜底：内聚在鉴权链路里，保证任何经过 AdminAuth/RootAuth
@@ -206,7 +217,7 @@ func TryUserAuth() func(c *gin.Context) {
 		c.Set("id", user.Id)
 		c.Set("role", user.Role)
 		c.Set("group", user.Group)
-		c.Set("user_group", user.Group)
+		setUserAccessContext(c, user.Group, user.AccountType)
 		c.Next()
 	}
 }
@@ -281,7 +292,7 @@ func TokenOrUserAuth() func(c *gin.Context) {
 			c.Set("id", user.Id)
 			c.Set("role", user.Role)
 			c.Set("group", user.Group)
-			c.Set("user_group", user.Group)
+			setUserAccessContext(c, user.Group, user.AccountType)
 			c.Next()
 			return
 		}
@@ -363,6 +374,8 @@ func TokenAuthReadOnly() func(c *gin.Context) {
 		c.Set("id", token.UserId)
 		c.Set("token_id", token.Id)
 		c.Set("token_key", token.Key)
+		userCache.WriteContext(c)
+		setUserAccessContext(c, userCache.Group, userCache.AccountType)
 		c.Next()
 	}
 }
@@ -470,12 +483,17 @@ func TokenAuth() func(c *gin.Context) {
 		}
 
 		userCache.WriteContext(c)
+		profile := service.UserAccessProfile{
+			UserGroup:   userCache.Group,
+			AccountType: userCache.AccountType,
+		}
+		setUserAccessContext(c, profile.UserGroup, profile.AccountType)
+		usableGroups := service.UserUsableGroupsFromContext(c)
 
 		userGroup := userCache.Group
 		tokenGroup := token.Group
 		if tokenGroup != "" {
-			// check common.UserUsableGroups[userGroup]
-			if _, ok := service.GetUserUsableGroups(userGroup)[tokenGroup]; !ok {
+			if _, ok := usableGroups[tokenGroup]; !ok {
 				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", tokenGroup))
 				return
 			}
@@ -487,6 +505,9 @@ func TokenAuth() func(c *gin.Context) {
 				}
 			}
 			userGroup = tokenGroup
+		} else if _, ok := usableGroups[userGroup]; !ok {
+			abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("无权访问 %s 分组", userGroup))
+			return
 		}
 		common.SetContextKey(c, constant.ContextKeyUsingGroup, userGroup)
 

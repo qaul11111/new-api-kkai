@@ -123,6 +123,12 @@ const createGroupSchema = (t: Translate) =>
     GroupRatio: createJsonStringField(t),
     TopupGroupRatio: createJsonStringField(t),
     UserUsableGroups: createJsonStringField(t),
+    AccountTypeGroupMapping: createJsonStringField(t, {
+      predicate: (parsed) =>
+        typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed),
+      predicateMessage: 'Expected a JSON object keyed by account type',
+    }),
+    AccountTypeSegmentationEnabled: z.boolean(),
     GroupGroupRatio: createJsonStringField(t),
     AutoGroups: createJsonStringField(t, {
       predicate: (parsed) =>
@@ -202,6 +208,11 @@ export function RatioSettingsCard({
     GroupRatio: normalizeJsonString(groupDefaults.GroupRatio),
     TopupGroupRatio: normalizeJsonString(groupDefaults.TopupGroupRatio),
     UserUsableGroups: normalizeJsonString(groupDefaults.UserUsableGroups),
+    AccountTypeGroupMapping: normalizeJsonString(
+      groupDefaults.AccountTypeGroupMapping
+    ),
+    AccountTypeSegmentationEnabled:
+      groupDefaults.AccountTypeSegmentationEnabled,
     GroupGroupRatio: normalizeJsonString(groupDefaults.GroupGroupRatio),
     AutoGroups: normalizeJsonString(groupDefaults.AutoGroups),
     DefaultUseAutoGroup: groupDefaults.DefaultUseAutoGroup,
@@ -240,6 +251,9 @@ export function RatioSettingsCard({
       GroupRatio: formatJsonForTextarea(groupDefaults.GroupRatio),
       TopupGroupRatio: formatJsonForTextarea(groupDefaults.TopupGroupRatio),
       UserUsableGroups: formatJsonForTextarea(groupDefaults.UserUsableGroups),
+      AccountTypeGroupMapping: formatJsonForTextarea(
+        groupDefaults.AccountTypeGroupMapping
+      ),
       GroupGroupRatio: formatJsonForTextarea(groupDefaults.GroupGroupRatio),
       AutoGroups: formatJsonForTextarea(groupDefaults.AutoGroups),
       GroupSpecialUsableGroup: formatJsonForTextarea(
@@ -288,6 +302,11 @@ export function RatioSettingsCard({
       GroupRatio: normalizeJsonString(groupDefaults.GroupRatio),
       TopupGroupRatio: normalizeJsonString(groupDefaults.TopupGroupRatio),
       UserUsableGroups: normalizeJsonString(groupDefaults.UserUsableGroups),
+      AccountTypeGroupMapping: normalizeJsonString(
+        groupDefaults.AccountTypeGroupMapping
+      ),
+      AccountTypeSegmentationEnabled:
+        groupDefaults.AccountTypeSegmentationEnabled,
       GroupGroupRatio: normalizeJsonString(groupDefaults.GroupGroupRatio),
       AutoGroups: normalizeJsonString(groupDefaults.AutoGroups),
       DefaultUseAutoGroup: groupDefaults.DefaultUseAutoGroup,
@@ -301,6 +320,9 @@ export function RatioSettingsCard({
       GroupRatio: formatJsonForTextarea(groupDefaults.GroupRatio),
       TopupGroupRatio: formatJsonForTextarea(groupDefaults.TopupGroupRatio),
       UserUsableGroups: formatJsonForTextarea(groupDefaults.UserUsableGroups),
+      AccountTypeGroupMapping: formatJsonForTextarea(
+        groupDefaults.AccountTypeGroupMapping
+      ),
       GroupGroupRatio: formatJsonForTextarea(groupDefaults.GroupGroupRatio),
       AutoGroups: formatJsonForTextarea(groupDefaults.AutoGroups),
       GroupSpecialUsableGroup: formatJsonForTextarea(
@@ -358,6 +380,10 @@ export function RatioSettingsCard({
         GroupRatio: normalizeJsonString(values.GroupRatio),
         TopupGroupRatio: normalizeJsonString(values.TopupGroupRatio),
         UserUsableGroups: normalizeJsonString(values.UserUsableGroups),
+        AccountTypeGroupMapping: normalizeJsonString(
+          values.AccountTypeGroupMapping
+        ),
+        AccountTypeSegmentationEnabled: values.AccountTypeSegmentationEnabled,
         GroupGroupRatio: normalizeJsonString(values.GroupGroupRatio),
         AutoGroups: normalizeJsonString(values.AutoGroups),
         DefaultUseAutoGroup: values.DefaultUseAutoGroup,

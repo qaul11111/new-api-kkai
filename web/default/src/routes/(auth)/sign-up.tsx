@@ -17,12 +17,19 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
+import z from 'zod'
 
 import { LinkAiSignUpPage } from '@/features/linkai-auth/sign-up'
 import { useAuthStore } from '@/stores/auth-store'
 
+const signUpSearchSchema = z.object({
+  account_type: z.enum(['consumer', 'business']).optional().catch(undefined),
+  aff: z.string().optional().catch(undefined),
+})
+
 export const Route = createFileRoute('/(auth)/sign-up')({
-  component: LinkAiSignUpPage,
+  validateSearch: signUpSearchSchema,
+  component: SignUpRoute,
   beforeLoad: async () => {
     const { auth } = useAuthStore.getState()
 
@@ -32,3 +39,8 @@ export const Route = createFileRoute('/(auth)/sign-up')({
     }
   },
 })
+
+function SignUpRoute() {
+  const search = Route.useSearch()
+  return <LinkAiSignUpPage initialAccountType={search.account_type} />
+}

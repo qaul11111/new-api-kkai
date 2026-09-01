@@ -290,7 +290,7 @@ func getImageStudioUser(ctx context.Context, db *gorm.DB, userID int) (*model.Us
 		return nil, ErrImageStudioTokenInvalid
 	}
 	var user model.User
-	if err := db.WithContext(ctx).Select("id", "group", "status").First(&user, "id = ?", userID).Error; err != nil {
+	if err := db.WithContext(ctx).Select("id", "group", "account_type", "status").First(&user, "id = ?", userID).Error; err != nil {
 		return nil, ErrImageStudioTokenInvalid
 	}
 	return &user, nil
@@ -298,7 +298,10 @@ func getImageStudioUser(ctx context.Context, db *gorm.DB, userID int) (*model.Us
 
 func imageStudioUserCanUseGroup(user *model.User) bool {
 	return user != nil && user.Status == common.UserStatusEnabled &&
-		GroupInUserUsableGroups(strings.TrimSpace(user.Group), ImageStudioTokenGroup) &&
+		GroupInUserUsableGroupsForProfile(UserAccessProfile{
+			UserGroup:   strings.TrimSpace(user.Group),
+			AccountType: user.AccountType,
+		}, ImageStudioTokenGroup) &&
 		ratio_setting.ContainsGroupRatio(ImageStudioTokenGroup)
 }
 

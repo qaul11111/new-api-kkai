@@ -11,5 +11,5 @@ import (
 func TestDescribeContractJSONUsesFeatureRuntime(t *testing.T) {
 	output, err := describeContractJSON("postgres")
 	require.NoError(t, err)
-	require.JSONEq(t, `{"compatible_prefixes":{"8":"sha256:826caefa93619049351ef9f32cd259c9089ffb02a0869ab14cedc302738af71a"},"migration_kind":"none","migration_set_digest":"sha256:826caefa93619049351ef9f32cd259c9089ffb02a0869ab14cedc302738af71a","migration_target_version":8,"runtime_max_version":8,"runtime_min_version":8,"schema_management":"runtime"}`, output)
+	require.JSONEq(t, `{"compatible_prefixes":{"9":"sha256:7b70b6ad1c313866b03877f73cbb758495bcb31f872b127e30f11ec8d8df2b4c"},"migration_kind":"none","migration_set_digest":"sha256:7b70b6ad1c313866b03877f73cbb758495bcb31f872b127e30f11ec8d8df2b4c","migration_target_version":9,"runtime_max_version":9,"runtime_min_version":9,"schema_management":"runtime"}`, output)
 }

@@ -143,6 +143,7 @@ func setupLogin(user *model.User, c *gin.Context) {
 	session.Set("role", user.Role)
 	session.Set("status", user.Status)
 	session.Set("group", user.Group)
+	session.Set("account_type", common.EffectiveAccountType(user.AccountType))
 	err := session.Save()
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserSessionSaveFailed)
@@ -159,6 +160,7 @@ func setupLogin(user *model.User, c *gin.Context) {
 			"role":         user.Role,
 			"status":       user.Status,
 			"group":        user.Group,
+			"account_type": common.EffectiveAccountType(user.AccountType),
 		},
 	})
 }
@@ -189,32 +191,33 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserPasswordRegisterDisabled)
 		return
 	}
-	var user model.User
-	err := json.NewDecoder(c.Request.Body).Decode(&user)
+	var request dto.RegisterRequest
+	err := common.DecodeJson(c.Request.Body, &request)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
-	user.Username = strings.TrimSpace(user.Username)
-	user.Email = model.NormalizeEmail(user.Email)
-	if user.Username == "" {
+	request.Username = strings.TrimSpace(request.Username)
+	request.Email = model.NormalizeEmail(request.Email)
+	accountType, validAccountType := common.NormalizeAccountType(request.AccountType)
+	if request.Username == "" || !validAccountType {
 		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
 		return
 	}
-	if err := common.Validate.Struct(&user); err != nil {
+	if err := common.Validate.Struct(&request); err != nil {
 		common.ApiErrorI18n(c, i18n.MsgUserInputInvalid, map[string]any{"Error": err.Error()})
 		return
 	}
 	if common.EmailVerificationEnabled {
-		if user.Email == "" || user.VerificationCode == "" {
+		if request.Email == "" || request.VerificationCode == "" {
 			common.ApiErrorI18n(c, i18n.MsgUserEmailVerificationRequired)
 			return
 		}
-		if !common.VerifyCodeWithKey(user.Email, user.VerificationCode, common.EmailVerificationPurpose) {
+		if !common.VerifyCodeWithKey(request.Email, request.VerificationCode, common.EmailVerificationPurpose) {
 			common.ApiErrorI18n(c, i18n.MsgUserVerificationCodeError)
 			return
 		}
-		if err := model.EnsureEmailAvailable(user.Email, 0); err != nil {
+		if err := model.EnsureEmailAvailable(request.Email, 0); err != nil {
 			if errors.Is(err, model.ErrEmailAlreadyTaken) {
 				common.ApiErrorI18n(c, i18n.MsgUserEmailAlreadyTaken)
 				return
@@ -225,9 +228,9 @@ func Register(c *gin.Context) {
 	}
 	emailForExistCheck := ""
 	if common.EmailVerificationEnabled {
-		emailForExistCheck = user.Email
+		emailForExistCheck = request.Email
 	}
-	exist, err := model.CheckUserExistOrDeleted(user.Username, emailForExistCheck)
+	exist, err := model.CheckUserExistOrDeleted(request.Username, emailForExistCheck)
 	if err != nil {
 		common.ApiErrorI18n(c, i18n.MsgDatabaseError)
 		common.SysLog(fmt.Sprintf("CheckUserExistOrDeleted error: %v", err))
@@ -237,17 +240,18 @@ func Register(c *gin.Context) {
 		common.ApiErrorI18n(c, i18n.MsgUserExists)
 		return
 	}
-	affCode := user.AffCode // this code is the inviter's code, not the user's own code
+	affCode := request.AffCode // this code is the inviter's code, not the user's own code
 	inviterId, _ := model.GetUserIdByAffCode(affCode)
 	cleanUser := model.User{
-		Username:    user.Username,
-		Password:    user.Password,
-		DisplayName: user.Username,
+		Username:    request.Username,
+		Password:    request.Password,
+		DisplayName: request.Username,
 		InviterId:   inviterId,
 		Role:        common.RoleCommonUser, // 明确设置角色为普通用户
+		AccountType: accountType,
 	}
 	if common.EmailVerificationEnabled {
-		cleanUser.Email = user.Email
+		cleanUser.Email = request.Email
 	}
 	if err := cleanUser.Insert(inviterId); err != nil {
 		if errors.Is(err, model.ErrEmailAlreadyTaken) {
@@ -318,6 +322,15 @@ func GetAllUsers(c *gin.Context) {
 func SearchUsers(c *gin.Context) {
 	keyword := c.Query("keyword")
 	group := c.Query("group")
+	accountType := strings.TrimSpace(c.Query("account_type"))
+	if accountType != "" {
+		var valid bool
+		accountType, valid = common.NormalizeAccountType(accountType)
+		if !valid {
+			common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+			return
+		}
+	}
 	var role *int
 	if roleStr := c.Query("role"); roleStr != "" {
 		if parsed, err := strconv.Atoi(roleStr); err == nil {
@@ -331,7 +344,7 @@ func SearchUsers(c *gin.Context) {
 		}
 	}
 	pageInfo := common.GetPageQuery(c)
-	users, total, err := model.SearchUsers(keyword, group, role, status, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
+	users, total, err := model.SearchUsers(keyword, group, accountType, role, status, pageInfo.GetStartIdx(), pageInfo.GetPageSize())
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -485,6 +498,7 @@ func GetSelf(c *gin.Context) {
 		"wechat_id":         user.WeChatId,
 		"telegram_id":       user.TelegramId,
 		"group":             user.Group,
+		"account_type":      common.EffectiveAccountType(user.AccountType),
 		"quota":             user.Quota,
 		"used_quota":        user.UsedQuota,
 		"request_count":     user.RequestCount,
@@ -608,7 +622,10 @@ func GetUserModels(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	groups := service.GetUserUsableGroups(user.Group)
+	groups := service.GetUserUsableGroupsForProfile(service.UserAccessProfile{
+		UserGroup:   user.Group,
+		AccountType: user.AccountType,
+	})
 	group := c.Query("group")
 	if group != "" {
 		if _, ok := groups[group]; !ok {
@@ -712,6 +729,58 @@ func UpdateUser(c *gin.Context) {
 		"message": "",
 	})
 	return
+}
+
+func UpdateUserAccountType(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil || id <= 0 {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+
+	var request dto.UpdateAccountTypeRequest
+	if err := common.DecodeJson(c.Request.Body, &request); err != nil {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+	accountType, valid := common.NormalizeAccountType(request.AccountType)
+	if !valid || strings.TrimSpace(request.AccountType) == "" {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
+
+	user, err := model.GetUserById(id, false)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !canManageTargetRole(c.GetInt("role"), user.Role) {
+		common.ApiErrorI18n(c, i18n.MsgUserNoPermissionHigherLevel)
+		return
+	}
+	previous := common.EffectiveAccountType(user.AccountType)
+	if err := model.UpdateUserAccountType(id, accountType); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if err := model.InvalidateUserCache(id); err != nil {
+		common.SysLog(fmt.Sprintf("failed to invalidate user cache for user %d: %s", id, err.Error()))
+	}
+	if err := model.InvalidateUserTokensCache(id); err != nil {
+		common.SysLog(fmt.Sprintf("failed to invalidate tokens cache for user %d: %s", id, err.Error()))
+	}
+	recordManageAuditFor(c, id, "user.account_type.update", map[string]interface{}{
+		"from": previous,
+		"to":   accountType,
+	})
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data": gin.H{
+			"id":           id,
+			"account_type": accountType,
+		},
+	})
 }
 
 func AdminClearUserBinding(c *gin.Context) {
@@ -960,6 +1029,11 @@ func CreateUser(c *gin.Context) {
 	if user.DisplayName == "" {
 		user.DisplayName = user.Username
 	}
+	accountType, validAccountType := common.NormalizeAccountType(user.AccountType)
+	if !validAccountType {
+		common.ApiErrorI18n(c, i18n.MsgInvalidParams)
+		return
+	}
 	myRole := c.GetInt("role")
 	if user.Role >= myRole {
 		common.ApiErrorI18n(c, i18n.MsgUserCannotCreateHigherLevel)
@@ -971,6 +1045,7 @@ func CreateUser(c *gin.Context) {
 		Password:    user.Password,
 		DisplayName: user.DisplayName,
 		Role:        user.Role, // 保持管理员设置的角色
+		AccountType: accountType,
 	}
 	authzTouched := false
 	if err := model.DB.Transaction(func(tx *gorm.DB) error {
@@ -993,8 +1068,9 @@ func CreateUser(c *gin.Context) {
 	cleanUser.FinishInsert(0)
 
 	recordManageAuditFor(c, cleanUser.Id, "user.create", map[string]interface{}{
-		"username": cleanUser.Username,
-		"role":     cleanUser.Role,
+		"username":     cleanUser.Username,
+		"role":         cleanUser.Role,
+		"account_type": cleanUser.AccountType,
 	})
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

@@ -178,19 +178,22 @@ type modelListGroups struct {
 func getModelListGroups(c *gin.Context) (modelListGroups, error) {
 	tokenGroup := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
 	userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
+	accountType := common.GetContextKeyString(c, constant.ContextKeyUserAccountType)
 	if userGroup == "" && (tokenGroup == "" || tokenGroup == "auto") {
-		var err error
-		userGroup, err = model.GetUserGroup(c.GetInt("id"), false)
+		user, err := model.GetUserCache(c.GetInt("id"))
 		if err != nil {
 			return modelListGroups{}, err
 		}
+		userGroup = user.Group
+		accountType = user.AccountType
 	}
+	profile := service.UserAccessProfile{UserGroup: userGroup, AccountType: accountType}
 
 	if tokenGroup == "auto" {
 		return modelListGroups{
 			userGroup:   userGroup,
 			tokenGroup:  tokenGroup,
-			ownerGroups: service.GetUserAutoGroup(userGroup),
+			ownerGroups: service.GetUserAutoGroupForProfile(profile),
 		}, nil
 	}
 
@@ -255,7 +258,7 @@ func ListModels(c *gin.Context, modelType int) {
 					}
 				}
 			}
-		} else {
+		} else if len(ownerGroups) > 0 {
 			models = model.GetGroupEnabledModels(ownerGroups[0])
 		}
 		for _, modelName := range models {
@@ -288,12 +291,12 @@ func ListModels(c *gin.Context, modelType int) {
 				Type:        "model",
 			}
 		}
-		c.JSON(200, gin.H{
-			"data":     useranthropicModels,
-			"first_id": useranthropicModels[0].ID,
-			"has_more": false,
-			"last_id":  useranthropicModels[len(useranthropicModels)-1].ID,
-		})
+		response := gin.H{"data": useranthropicModels, "has_more": false}
+		if len(useranthropicModels) > 0 {
+			response["first_id"] = useranthropicModels[0].ID
+			response["last_id"] = useranthropicModels[len(useranthropicModels)-1].ID
+		}
+		c.JSON(200, response)
 	case constant.ChannelTypeGemini:
 		userGeminiModels := make([]dto.GeminiModel, len(userOpenAiModels))
 		for i, model := range userOpenAiModels {
@@ -323,9 +326,24 @@ func ChannelListModels(c *gin.Context) {
 }
 
 func DashboardListModels(c *gin.Context) {
+	usableGroups := service.UserUsableGroupsFromContext(c)
+	allowedModels := make(map[string]struct{})
+	for group := range usableGroups {
+		for _, modelName := range model.GetGroupEnabledModels(group) {
+			allowedModels[modelName] = struct{}{}
+		}
+	}
+	visibleModels := make(map[int][]string, len(channelId2Models))
+	for channelType, modelNames := range channelId2Models {
+		for _, modelName := range modelNames {
+			if _, allowed := allowedModels[modelName]; allowed {
+				visibleModels[channelType] = append(visibleModels[channelType], modelName)
+			}
+		}
+	}
 	c.JSON(200, gin.H{
 		"success": true,
-		"data":    channelId2Models,
+		"data":    visibleModels,
 	})
 }
 

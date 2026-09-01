@@ -50,6 +50,7 @@ import {
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
 import { useStatus } from '@/hooks/use-status'
+import { ACCOUNT_TYPE } from '@/lib/account-type'
 import { cn } from '@/lib/utils'
 
 export function SignUpForm({
@@ -163,6 +164,7 @@ export function SignUpForm({
         email: data.email || undefined,
         verification_code: verificationCode || undefined,
         aff_code: getAffiliateCode(),
+        account_type: ACCOUNT_TYPE.CONSUMER,
         turnstile: turnstileToken,
       })
 
@@ -208,7 +210,7 @@ export function SignUpForm({
 
     setIsWeChatSubmitting(true)
     try {
-      const res = await wechatLoginByCode(wechatCode)
+      const res = await wechatLoginByCode(wechatCode, ACCOUNT_TYPE.CONSUMER)
       if (res?.success) {
         await handleLoginSuccess(res.data as { id?: number } | null)
         toast.success(t('Signed in via WeChat'))

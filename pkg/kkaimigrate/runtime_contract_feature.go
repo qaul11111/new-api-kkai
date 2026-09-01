@@ -3,9 +3,9 @@
 package kkaimigrate
 
 const (
-	RuntimeMinVersion      int64 = AuthenticationSchemaVersion
-	RuntimeMaxVersion      int64 = AuthenticationSchemaVersion
-	MigrationTargetVersion int64 = AuthenticationSchemaVersion
+	RuntimeMinVersion      int64 = AccountTypeSchemaVersion
+	RuntimeMaxVersion      int64 = AccountTypeSchemaVersion
+	MigrationTargetVersion int64 = AccountTypeSchemaVersion
 
 	RequiredRuntimeVersion int64 = RuntimeMinVersion
 	MaxCompatibleVersion   int64 = RuntimeMaxVersion

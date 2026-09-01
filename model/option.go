@@ -149,6 +149,8 @@ func InitOptionMap() {
 	common.OptionMap["GroupRatio"] = ratio_setting.GroupRatio2JSONString()
 	common.OptionMap["GroupGroupRatio"] = ratio_setting.GroupGroupRatio2JSONString()
 	common.OptionMap["UserUsableGroups"] = setting.UserUsableGroups2JSONString()
+	common.OptionMap[setting.AccountTypeSegmentationEnabledOptionKey] = strconv.FormatBool(setting.IsAccountTypeSegmentationEnabled())
+	common.OptionMap[setting.AccountTypeGroupMappingOptionKey] = setting.AccountTypeGroupMapping2JSONString()
 	common.OptionMap["CompletionRatio"] = ratio_setting.CompletionRatio2JSONString()
 	common.OptionMap["ImageRatio"] = ratio_setting.ImageRatio2JSONString()
 	common.OptionMap[image_pricing_setting.OptionKey] = image_pricing_setting.JSON()
@@ -388,6 +390,8 @@ func updateOptionMap(key string, value string) (err error) {
 			system_setting.WorkerAllowHttpImageRequestEnabled = boolValue
 		case "DefaultUseAutoGroup":
 			setting.DefaultUseAutoGroup = boolValue
+		case setting.AccountTypeSegmentationEnabledOptionKey:
+			setting.SetAccountTypeSegmentationEnabled(boolValue)
 		case "ExposeRatioEnabled":
 			ratio_setting.SetExposeRatioEnabled(boolValue)
 		}
@@ -558,6 +562,8 @@ func updateOptionMap(key string, value string) (err error) {
 		err = ratio_setting.UpdateGroupGroupRatioByJSONString(value)
 	case "UserUsableGroups":
 		err = setting.UpdateUserUsableGroupsByJSONString(value)
+	case setting.AccountTypeGroupMappingOptionKey:
+		err = setting.UpdateAccountTypeGroupMappingByJSONString(value)
 	case "CompletionRatio":
 		err = ratio_setting.UpdateCompletionRatioByJSONString(value)
 	case "ModelPrice":
@@ -608,6 +614,12 @@ func validateOptionValue(key, value string) error {
 	}
 	if key == operation_setting.ChannelTestConcurrencyOptionKey {
 		return operation_setting.ValidateChannelTestConcurrency(value)
+	}
+	if key == setting.AccountTypeGroupMappingOptionKey {
+		return setting.ValidateAccountTypeGroupMappingJSON(value)
+	}
+	if key == setting.AccountTypeSegmentationEnabledOptionKey && value != "true" && value != "false" {
+		return fmt.Errorf("%s must be true or false", key)
 	}
 	return nil
 }

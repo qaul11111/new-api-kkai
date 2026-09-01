@@ -20,7 +20,12 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 import { api } from '@/lib/api'
 
-import { buildTelegramAuthParams, telegramLogin } from './api'
+import {
+  buildTelegramAuthParams,
+  getOAuthState,
+  telegramLogin,
+  wechatLoginByCode,
+} from './api'
 
 vi.mock('@/lib/api', () => ({
   api: {
@@ -80,5 +85,35 @@ describe('telegramLogin', () => {
     })
     expect(result.success).toBe(true)
     expect(result.data?.id).toBe(7)
+  })
+})
+
+describe('registration account type forwarding', () => {
+  beforeEach(() => {
+    mockedGet.mockReset()
+    window.localStorage.clear()
+  })
+
+  test('includes the selected account type in OAuth state creation', async () => {
+    window.localStorage.setItem('aff', 'affiliate-1')
+    mockedGet.mockResolvedValue({
+      data: { success: true, data: 'oauth-state' },
+    })
+
+    await expect(getOAuthState('business')).resolves.toBe('oauth-state')
+    expect(mockedGet).toHaveBeenCalledWith('/api/oauth/state', {
+      params: { aff: 'affiliate-1', account_type: 'business' },
+    })
+  })
+
+  test('includes the selected account type in WeChat registration login', async () => {
+    mockedGet.mockResolvedValue({
+      data: { success: true, message: '', data: { id: 9 } },
+    })
+
+    await wechatLoginByCode('wechat-code', 'business')
+    expect(mockedGet).toHaveBeenCalledWith('/api/oauth/wechat', {
+      params: { code: 'wechat-code', account_type: 'business' },
+    })
   })
 })

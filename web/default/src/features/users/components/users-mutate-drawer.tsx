@@ -62,6 +62,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { Textarea } from '@/components/ui/textarea'
+import { ACCOUNT_TYPE, ACCOUNT_TYPE_OPTIONS } from '@/lib/account-type'
 import {
   ADMIN_PERMISSION_ACTIONS,
   ADMIN_PERMISSION_RESOURCES,
@@ -80,6 +81,7 @@ import {
   getUser,
   getGroups,
   getPermissionCatalog,
+  updateUserAccountType,
 } from '../api'
 import { BINDING_FIELDS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import {
@@ -89,7 +91,7 @@ import {
   transformFormDataToPayload,
   transformUserToFormDefaults,
 } from '../lib'
-import { type User } from '../types'
+import type { User } from '../types'
 import { UserQuotaDialog } from './user-quota-dialog'
 import { useUsers } from './users-provider'
 
@@ -136,11 +138,13 @@ export function UsersMutateDrawer({
   useEffect(() => {
     if (open && isUpdate && currentRow) {
       // For update, fetch fresh data
-      getUser(currentRow.id).then((result) => {
-        if (result.success && result.data) {
-          form.reset(transformUserToFormDefaults(result.data))
-        }
-      })
+      void getUser(currentRow.id)
+        .then((result) => {
+          if (result.success && result.data) {
+            form.reset(transformUserToFormDefaults(result.data))
+          }
+        })
+        .catch(() => undefined)
     } else if (open && !isUpdate) {
       // For create, reset to defaults
       form.reset(USER_FORM_DEFAULT_VALUES)
@@ -175,9 +179,18 @@ export function UsersMutateDrawer({
         currentRow?.id,
         permissionCatalog
       )
-      const result = isUpdate
+      let result = isUpdate
         ? await updateUser(payload as typeof payload & { id: number })
         : await createUser(payload)
+
+      if (
+        result.success &&
+        isUpdate &&
+        currentRow &&
+        data.account_type !== (currentRow.account_type ?? ACCOUNT_TYPE.CONSUMER)
+      ) {
+        result = await updateUserAccountType(currentRow.id, data.account_type)
+      }
 
       if (result.success) {
         toast.success(
@@ -195,7 +208,7 @@ export function UsersMutateDrawer({
               : t(ERROR_MESSAGES.CREATE_FAILED))
         )
       }
-    } catch (_error) {
+    } catch {
       toast.error(t(ERROR_MESSAGES.UNEXPECTED))
     } finally {
       setIsSubmitting(false)
@@ -278,7 +291,8 @@ export function UsersMutateDrawer({
                             { value: '10', label: t('Admin') },
                           ]}
                           onValueChange={(value) =>
-                            value !== null && field.onChange(parseInt(value))
+                            value !== null &&
+                            field.onChange(Number.parseInt(value))
                           }
                           value={String(field.value)}
                         >
@@ -304,6 +318,48 @@ export function UsersMutateDrawer({
                     )}
                   />
                 )}
+
+                <FormField
+                  control={form.control}
+                  name='account_type'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('Account type')}</FormLabel>
+                      <Select
+                        items={ACCOUNT_TYPE_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: t(option.labelKey),
+                        }))}
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue
+                              placeholder={t('Select account type')}
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent alignItemWithTrigger={false}>
+                          <SelectGroup>
+                            {ACCOUNT_TYPE_OPTIONS.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {t(option.labelKey)}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        {t('Controls which model groups this user can access')}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 <FormField
                   control={form.control}
@@ -360,12 +416,10 @@ export function UsersMutateDrawer({
                       <FormItem>
                         <FormLabel>{t('Group')}</FormLabel>
                         <Select
-                          items={[
-                            ...groups.map((group) => ({
-                              value: group,
-                              label: group,
-                            })),
-                          ]}
+                          items={groups.map((group) => ({
+                            value: group,
+                            label: group,
+                          }))}
                           onValueChange={field.onChange}
                           value={field.value}
                         >

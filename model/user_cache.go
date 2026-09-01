@@ -11,12 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const userCacheSchemaVersion = 1
+const userCacheSchemaVersion = 2
 
 // UserBase struct remains the same as it represents the cached data structure
 type UserBase struct {
 	Id          int    `json:"id"`
 	Group       string `json:"group"`
+	AccountType string `json:"account_type"`
 	Email       string `json:"email"`
 	Quota       int64  `json:"quota"`
 	Status      int    `json:"status"`
@@ -27,6 +28,7 @@ type UserBase struct {
 
 func (user *UserBase) WriteContext(c *gin.Context) {
 	common.SetContextKey(c, constant.ContextKeyUserGroup, user.Group)
+	common.SetContextKey(c, constant.ContextKeyUserAccountType, common.EffectiveAccountType(user.AccountType))
 	common.SetContextKey(c, constant.ContextKeyUserQuota, user.Quota)
 	common.SetContextKey(c, constant.ContextKeyUserStatus, user.Status)
 	common.SetContextKey(c, constant.ContextKeyUserEmail, user.Email)
@@ -102,30 +104,30 @@ func writeUserCache(user *UserBase, includeQuota bool) error {
 		includeQuotaArg = 1
 	}
 	const script = `
-local include_quota = tonumber(ARGV[8]) == 1
+local include_quota = tonumber(ARGV[9]) == 1
 local exists = redis.call('EXISTS', KEYS[1]) == 1
 local schema = tonumber(redis.call('HGET', KEYS[1], 'CacheSchema') or '0')
-if not include_quota and (not exists or schema ~= tonumber(ARGV[7])) then
+if not include_quota and (not exists or schema ~= tonumber(ARGV[8])) then
   return 0
 end
-if include_quota and (not exists or schema ~= tonumber(ARGV[7])) then
+if include_quota and (not exists or schema ~= tonumber(ARGV[8])) then
   redis.call('DEL', KEYS[1])
   redis.call('HSET', KEYS[1],
-    'Id', ARGV[1], 'Group', ARGV[2], 'Email', ARGV[3], 'Status', ARGV[4],
-    'Username', ARGV[5], 'Setting', ARGV[6], 'CacheSchema', ARGV[7],
-    'Quota', ARGV[9])
+    'Id', ARGV[1], 'Group', ARGV[2], 'AccountType', ARGV[3], 'Email', ARGV[4],
+    'Status', ARGV[5], 'Username', ARGV[6], 'Setting', ARGV[7], 'CacheSchema', ARGV[8],
+    'Quota', ARGV[10])
 else
   redis.call('HSET', KEYS[1],
-    'Id', ARGV[1], 'Group', ARGV[2], 'Email', ARGV[3], 'Status', ARGV[4],
-    'Username', ARGV[5], 'Setting', ARGV[6], 'CacheSchema', ARGV[7])
+    'Id', ARGV[1], 'Group', ARGV[2], 'AccountType', ARGV[3], 'Email', ARGV[4],
+    'Status', ARGV[5], 'Username', ARGV[6], 'Setting', ARGV[7], 'CacheSchema', ARGV[8])
   if include_quota and redis.call('HEXISTS', KEYS[1], 'Quota') == 0 then
-    redis.call('HSET', KEYS[1], 'Quota', ARGV[9])
+    redis.call('HSET', KEYS[1], 'Quota', ARGV[10])
   end
 end
-redis.call('EXPIRE', KEYS[1], ARGV[10])
+redis.call('EXPIRE', KEYS[1], ARGV[11])
 return 1`
 	return common.RDB.Eval(context.Background(), script, []string{getUserCacheKey(user.Id)},
-		user.Id, user.Group, user.Email, user.Status, user.Username, user.Setting,
+		user.Id, user.Group, common.EffectiveAccountType(user.AccountType), user.Email, user.Status, user.Username, user.Setting,
 		user.CacheSchema, includeQuotaArg, user.Quota, userCacheTTLSeconds(),
 	).Err()
 }

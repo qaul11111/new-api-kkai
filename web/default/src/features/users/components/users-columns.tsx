@@ -31,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { ACCOUNT_TYPE, getAccountTypeLabelKey } from '@/lib/account-type'
 import { formatQuota, formatTimestamp } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
@@ -274,6 +275,24 @@ export function useUsersColumns(): ColumnDef<User>[] {
       enableSorting: false,
       size: 120,
       meta: { mobileOrder: 20 },
+    },
+    {
+      accessorKey: 'account_type',
+      header: t('Account type'),
+      cell: ({ row }) => {
+        const accountType = row.original.account_type ?? ACCOUNT_TYPE.CONSUMER
+        return (
+          <StatusBadge
+            label={t(getAccountTypeLabelKey(accountType))}
+            variant={accountType === ACCOUNT_TYPE.BUSINESS ? 'info' : 'neutral'}
+            copyable={false}
+          />
+        )
+      },
+      filterFn: (row, id, value) => value.includes(String(row.getValue(id))),
+      enableSorting: false,
+      size: 170,
+      meta: { mobileOrder: 25 },
     },
     {
       id: 'invite_info',

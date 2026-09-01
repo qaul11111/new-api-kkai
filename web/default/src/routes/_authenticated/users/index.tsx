@@ -35,6 +35,10 @@ const usersSearchSchema = z.object({
     .array(z.enum(['1', '10', '100']))
     .optional()
     .catch([]),
+  account_type: z
+    .array(z.enum(['consumer', 'business']))
+    .optional()
+    .catch([]),
   group: z.string().optional().catch(''),
 })
 

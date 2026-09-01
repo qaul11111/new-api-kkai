@@ -4,9 +4,9 @@ import (
 	"strconv"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/service"
-	"github.com/QuantumNous/new-api/setting"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,9 +25,13 @@ func GetKKAIGroupStatus(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	profile := service.UserAccessProfile{
+		UserGroup:   userGroup,
+		AccountType: common.GetContextKeyString(c, constant.ContextKeyUserAccountType),
+	}
 	result, err := service.GetKKAIGroupStatuses(service.KKAIGroupStatusRequest{
-		UsableGroups: service.GetUserUsableGroups(userGroup),
-		AutoGroups:   setting.GetAutoGroups(),
+		UsableGroups: service.GetUserUsableGroupsForProfile(profile),
+		AutoGroups:   service.GetUserAutoGroupForProfile(profile),
 		Hours:        hours,
 		Window:       c.Query("window"),
 	})

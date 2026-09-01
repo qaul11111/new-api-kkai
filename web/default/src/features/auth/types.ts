@@ -17,6 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { User } from '@/features/users/types'
+import type { AccountType } from '@/lib/account-type'
 
 // ============================================================================
 // API Payloads
@@ -38,6 +39,7 @@ export interface RegisterPayload {
   email?: string
   verification_code?: string
   aff_code?: string
+  account_type: AccountType
   turnstile?: string
 }
 
@@ -66,6 +68,7 @@ export interface LoginResponse {
   data?: {
     require_2fa?: boolean
     id?: number
+    account_type?: AccountType
   }
 }
 

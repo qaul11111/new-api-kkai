@@ -29,6 +29,7 @@ import {
 } from '@/components/data-table'
 import { useMediaQuery } from '@/hooks'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { ACCOUNT_TYPE_OPTIONS } from '@/lib/account-type'
 
 import { getUsers, searchUsers } from '../api'
 import {
@@ -70,6 +71,7 @@ export function UsersTable() {
     columnFilters: [
       { columnId: 'status', searchKey: 'status', type: 'array' },
       { columnId: 'role', searchKey: 'role', type: 'array' },
+      { columnId: 'account_type', searchKey: 'account_type', type: 'array' },
       { columnId: 'group', searchKey: 'group', type: 'string' },
     ],
   })
@@ -84,6 +86,10 @@ export function UsersTable() {
   const groupFilter =
     (columnFilters.find((filter) => filter.id === 'group')?.value as string) ??
     ''
+  const accountTypeFilter =
+    (columnFilters.find((filter) => filter.id === 'account_type')?.value as
+      | string[]
+      | undefined) ?? []
 
   // Fetch data with React Query
   const { data, isLoading, isFetching } = useQuery({
@@ -94,13 +100,17 @@ export function UsersTable() {
       globalFilter,
       statusFilter,
       roleFilter,
+      accountTypeFilter,
       groupFilter,
       refreshTrigger,
     ],
     queryFn: async () => {
       const hasFilter = globalFilter?.trim()
       const hasColumnFilter =
-        statusFilter.length > 0 || roleFilter.length > 0 || Boolean(groupFilter)
+        statusFilter.length > 0 ||
+        roleFilter.length > 0 ||
+        accountTypeFilter.length > 0 ||
+        Boolean(groupFilter)
       const params = {
         p: pagination.pageIndex + 1,
         page_size: pagination.pageSize,
@@ -114,6 +124,10 @@ export function UsersTable() {
               status: statusFilter[0] ?? '',
               role: roleFilter[0] ?? '',
               group: groupFilter,
+              account_type: accountTypeFilter[0] as
+                | 'consumer'
+                | 'business'
+                | undefined,
             })
           : await getUsers(params)
 
@@ -190,15 +204,21 @@ export function UsersTable() {
             options: getUserRoleOptions(t),
             singleSelect: true,
           },
+          {
+            columnId: 'account_type',
+            title: t('Account type'),
+            options: ACCOUNT_TYPE_OPTIONS.map((option) => ({
+              label: t(option.labelKey),
+              value: option.value,
+            })),
+            singleSelect: true,
+          },
         ],
       }}
-      getRowClassName={(row, { isMobile }) =>
-        isDisabledUserRow(row.original)
-          ? isMobile
-            ? DISABLED_ROW_MOBILE
-            : DISABLED_ROW_DESKTOP
-          : undefined
-      }
+      getRowClassName={(row, { isMobile }) => {
+        if (!isDisabledUserRow(row.original)) return undefined
+        return isMobile ? DISABLED_ROW_MOBILE : DISABLED_ROW_DESKTOP
+      }}
       bulkActions={<DataTableBulkActions table={table} />}
     />
   )

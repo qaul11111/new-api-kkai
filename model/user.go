@@ -40,6 +40,7 @@ type User struct {
 	UsedQuota        int64                      `json:"used_quota" gorm:"type:bigint;default:0;column:used_quota"` // used quota
 	RequestCount     int                        `json:"request_count" gorm:"type:int;default:0;"`                  // request number
 	Group            string                     `json:"group" gorm:"type:varchar(64);default:'default'"`
+	AccountType      string                     `json:"account_type" gorm:"type:varchar(16);column:account_type"`
 	AffCode          string                     `json:"aff_code" gorm:"type:varchar(32);column:aff_code;uniqueIndex"`
 	AffCount         int                        `json:"aff_count" gorm:"type:int;default:0;column:aff_count"`
 	AffQuota         int                        `json:"aff_quota" gorm:"type:int;default:0;column:aff_quota"`           // 邀请剩余额度
@@ -59,6 +60,7 @@ func (user *User) ToBaseUser() *UserBase {
 	cache := &UserBase{
 		Id:          user.Id,
 		Group:       user.Group,
+		AccountType: common.EffectiveAccountType(user.AccountType),
 		Quota:       user.Quota,
 		Status:      user.Status,
 		Username:    user.Username,
@@ -94,6 +96,19 @@ func UpdateUserAccessToken(id int, token string) error {
 		return gorm.ErrRecordNotFound
 	}
 	return nil
+}
+
+// UpdateUserAccountType changes only the durable B/C classification. It must
+// not write a stale user snapshot over role, status, group, or quota changes.
+func UpdateUserAccountType(id int, accountType string) error {
+	if id <= 0 {
+		return errors.New("id 为空！")
+	}
+	normalized, valid := common.NormalizeAccountType(accountType)
+	if !valid {
+		return ErrInvalidAccountType
+	}
+	return DB.Model(&User{}).Where("id = ?", id).Update("account_type", normalized).Error
 }
 
 func (user *User) GetSetting() dto.UserSetting {
@@ -361,7 +376,7 @@ func GetAllUsers(pageInfo *common.PageInfo) (users []*User, total int64, err err
 	return users, total, nil
 }
 
-func SearchUsers(keyword string, group string, role *int, status *int, startIdx int, num int) ([]*User, int64, error) {
+func SearchUsers(keyword string, group string, accountType string, role *int, status *int, startIdx int, num int) ([]*User, int64, error) {
 	var users []*User
 	var total int64
 	var err error
@@ -395,6 +410,9 @@ func SearchUsers(keyword string, group string, role *int, status *int, startIdx 
 	query = query.Where("("+likeCondition+")", likeArgs...)
 	if group != "" {
 		query = query.Where(commonGroupCol+" = ?", group)
+	}
+	if accountType != "" {
+		query = query.Where("account_type = ?", accountType)
 	}
 	if role != nil {
 		query = query.Where("role = ?", *role)
@@ -489,6 +507,11 @@ func inviteUser(inviterId int) error {
 
 func (user *User) prepareForInsert(tx *gorm.DB) error {
 	user.Email = NormalizeEmail(user.Email)
+	accountType, valid := common.NormalizeAccountType(user.AccountType)
+	if !valid {
+		return ErrInvalidAccountType
+	}
+	user.AccountType = accountType
 	if err := ensureEmailAvailableWithTx(tx, user.Email, 0); err != nil {
 		return err
 	}

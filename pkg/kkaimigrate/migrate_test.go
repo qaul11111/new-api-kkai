@@ -446,6 +446,11 @@ func TestPlanHasImmutableChecksums(t *testing.T) {
 			Name:     "stateless_authentication",
 			Checksum: "4e96401b2e276968fca0f83e68b79eee7a862d2a7fadec2c13c99e9fd349e07d",
 		},
+		{
+			Version:  AccountTypeSchemaVersion,
+			Name:     "user_account_type",
+			Checksum: "2a14d69cdf30d6260badfe070de62e37f59dd12a35be41be1ac18ce6795ae095",
+		},
 	}, Plan())
 }
 
