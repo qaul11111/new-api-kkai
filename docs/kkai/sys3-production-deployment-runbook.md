@@ -41,7 +41,8 @@
 | 当前应用镜像           | `qaul11111/new-api-kkai:sys3-linkai-console-webcompat-20260831-1c8c37b86` |
 | 当前镜像后端基线       | `56145052eef44b10ee053fafeaf2eb54beeb1713`                                |
 | UI 变更提交            | `1c8c37b8631f2f4766df4f878e22699e5ca49eff`                                |
-| 最近确认的 KKAI schema | v4                                                                        |
+| 最近确认的 KKAI schema | v9（2026-09-01 受控迁移，精确 ledger `9|9`）                              |
+| schema 迁移制品源码    | `e1627a77bd9b7e6ec841df53098464038a8ce6b8`                                |
 | 当前应用角色           | `KKAI_NODE_ROLE=leader`                                                   |
 | 应用持久化目录         | `/srv/kkai/data/apps/newapi` -> 容器 `/data`                              |
 | Redis 持久化目录       | `/srv/kkai/data/apps/newapi-redis` -> 容器 `/data`                        |
@@ -55,16 +56,16 @@
 
 ## 3. 当前存在的发布阻断项
 
-截至最后核对日期，sys3 已完成状态巡检、Mac 单份异机备份和真实隔离恢复验证，并已安装固定基础设施提交的 fail-closed 控制器；但它 **尚不具备本仓库规定的标准生产发布条件**：
+截至最后核对日期，sys3 已完成状态巡检、Mac 单份异机备份和真实隔离恢复验证，已安装固定基础设施提交的 fail-closed 控制器，并已通过单独授权、对应备份克隆演练和逐级门禁把 KKAI schema 从 v4 迁移到 v9；但它 **尚不具备本仓库规定的标准生产发布条件**：
 
 1. `/usr/local/sbin/kkai-newapi-manual-deploy` 当前只实现 `status` 和 `preflight`，`stage`、`promote`、`rollback` 会明确拒绝执行；
 2. sys3 当前是单应用实例 Compose，不具备只替换空闲槽位、候选只读验收、原版本原地待命的完整蓝绿结构；
-3. 最近确认的 schema 是 v4，而当前 B/C 正式构建的 `bridge` 与 `feature` 契约都要求 `(9,9,9)`。
+
+schema v9 门禁已满足，不再是当前阻断项；当前阻断项仍是控制器和单实例拓扑尚未提供可验证的蓝绿发布与回滚状态机。
 
 因此，在下一次普通生产发布前必须先完成以下工作：
 
 - 在 sys3 基础设施仓库中补齐并验证蓝绿槽位、路由和控制器的 `stage`、`promote`、`rollback`；
-- 单独规划 schema v4 到受支持版本的迁移。迁移不得由普通发布顺带执行。
 
 上述任一项未完成时，普通发布结论必须是 **STOP**。不得用裸 `docker compose up`、手工改镜像名或临时启动第二个 leader 来绕过门禁。紧急事故处置必须使用单独的 break-glass 方案和明确授权，不属于本手册的快速发布路径。
 
@@ -150,7 +151,33 @@ git cat-file -e 'HEAD^{commit}'
 
 不允许为了构建临时 stash、忽略未跟踪文件或把开发分支伪装成生产分支。
 
-### 7.2 运行完整质量门禁
+### 7.2 锁定 GitHub CLI 到所有者仓库
+
+本仓库保留 `upstream=https://github.com/QuantumNous/new-api.git` 仅用于读取上游更新。任何 GitHub API、workflow、run、PR 或 release 操作都必须以 `qaul11111/new-api-kkai` 为明确目标，不能根据 remote 顺序、当前分支或 CLI 推断目标仓库。
+
+首次进入仓库或 Git 配置变化后执行：
+
+```bash
+git remote get-url origin
+gh repo set-default qaul11111/new-api-kkai
+test "$(gh repo set-default --view)" = "qaul11111/new-api-kkai"
+git config --local --get remote.origin.gh-resolved
+```
+
+通过条件：`origin` 严格等于所有者仓库，默认仓库输出严格等于 `qaul11111/new-api-kkai`，`remote.origin.gh-resolved` 等于 `base`。
+
+手动 workflow 必须显式指定目标和 ref，例如：
+
+```bash
+gh workflow run <workflow-file> \
+  --repo qaul11111/new-api-kkai \
+  --ref production/kkrich
+gh run view <run-id> --repo qaul11111/new-api-kkai
+```
+
+禁止执行未带 `--repo qaul11111/new-api-kkai` 的 `gh workflow run`。`upstream` 只能用于 `git fetch upstream` 和受控合并；不得作为 `gh` 写操作目标。命令返回 404、目标 owner/repo 不一致或无法验证时立即停止，不得换目标重试。
+
+### 7.3 运行完整质量门禁
 
 ```bash
 cd "$app_repo"
@@ -249,7 +276,7 @@ DSN 必须通过受控 stdin 或 secret provider 传入，禁止：
 
 当前 `bridge` 与 `feature` 都是 `(runtime_min=9, runtime_max=9, migration_target=9)`。bridge 构建标签仅为构建兼容保留，不表示 B/C 代码可在 v8 运行。generic preflight 显示 ready 不代表 schema 兼容。
 
-sys3 最近确认是 v4，因此不能直接部署当前 `bridge` 或 `feature` 正式镜像。必须先按 [migrations.md](./migrations.md) 单独完成受控升级，或保持经过单独评审的旧后端兼容制品。后者不是长期标准发布路径。
+sys3 已在 2026-09-01 通过独立授权的受控流程迁移到 v9，并已核验精确 ledger、迁移摘要、关键列和服务健康。后续正式镜像仍必须在当次发布窗口重新执行在线只读观察；只有观察结果与 feature `(9,9,9)` 契约一致，且其他发布门禁全部通过时，才能进入候选 stage。schema 达标本身不授权镜像切换。
 
 ## 10. 阶段 D：生成并验证备份
 
